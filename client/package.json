@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "check-types": "tsc",
-    "test": "playwright test"
+    "test": "playwright test",
+    "test:update-snapshots": "playwright test --update-snapshots"
   },
   "dependencies": {
     "@deck.gl/geo-layers": "8.9.19",

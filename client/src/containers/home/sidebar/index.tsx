@@ -23,6 +23,7 @@ export default function Sidebar({ children }: PropsWithChildren) {
         'translate-x-0': open,
         '-translate-x-full': !open,
       })}
+      data-testid="sidebar"
     >
       <div className="absolute left-full top-6 z-10">
         <Button
