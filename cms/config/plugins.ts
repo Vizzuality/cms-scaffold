@@ -7,7 +7,7 @@ module.exports = {
           console.log("generatedDocumentationDraft", generatedDocumentationDraft);
           Object.keys(generatedDocumentationDraft.paths).forEach((path) => {
             // check if it has {id} in the path
-            if (path.includes("{id}")) {
+            if (path.includes("/dataset-groups/{id}") || path.includes("/datasets/{id}") || path.includes("/layers/{id}")) {
               // add `populate` as params
               if (generatedDocumentationDraft.paths[path].get) {
                 if (!generatedDocumentationDraft.paths[path].get.parameters.find((param) => param.name === "populate")) {

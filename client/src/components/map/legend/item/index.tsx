@@ -49,6 +49,7 @@ export const LegendItem: React.FC<PropsWithChildren & LegendItemProps> = ({
             'mb-1 w-full border border-slate-200 border-t-transparent': true,
             [className]: !!className,
           })}
+          data-testid={`legend-item-${id}`}
         >
           <header className="sticky top-0 z-10 flex items-start justify-between space-x-8 border-t border-slate-200 bg-white px-2.5 py-2.5">
             <div

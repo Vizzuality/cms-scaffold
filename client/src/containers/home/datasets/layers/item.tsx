@@ -30,7 +30,11 @@ export default function LayersItem({ id, attributes }: Required<LayerListRespons
       <header className="flex justify-between space-x-2.5 py-1 pl-2">
         <h4>{attributes.title}</h4>
 
-        <Switch checked={layers.includes(id)} onCheckedChange={handleLayerChange} />
+        <Switch
+          data-testid={`layer-switch-${id}`}
+          checked={layers.includes(id)}
+          onCheckedChange={handleLayerChange}
+        />
       </header>
     </li>
   );
