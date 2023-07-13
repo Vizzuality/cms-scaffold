@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
       body: JSON.stringify(DATASETS),
     });
   });
-  await page.route(/.*\/api\/layers/, (route) => {
+  await page.route(/.*\/api\/layers\?filters/, (route) => {
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -19,7 +19,7 @@ test.beforeEach(async ({ page }) => {
     });
   });
 
-  await page.goto('/');
+  await page.goto('/?layers=[]');
 });
 
 test('add one layer', async ({ page }) => {
