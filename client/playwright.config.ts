@@ -32,7 +32,7 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
 
-  updateSnapshots: process.env.CI ? 'missing' : 'all',
+  updateSnapshots: process.env.CI ? 'none' : 'all',
 
   /* Configure projects for major browsers */
   projects: [
