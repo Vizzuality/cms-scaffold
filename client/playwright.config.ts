@@ -22,7 +22,7 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  reporter: 'list',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
@@ -32,7 +32,6 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
 
-  snapshotDir: 'snapshots',
   updateSnapshots: process.env.CI ? 'none' : 'all',
 
   /* Configure projects for major browsers */
@@ -42,15 +41,16 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
 
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-
-    // DISABLING SAFARI TESTS FOR NOW because of this
+    // DISABLING SAFARI AND FIREFOX TESTS FOR NOW because of this
     // https://github.com/facebookexperimental/Recoil/issues/1994
     // RecoilURLSync is not working in Safari
     // I have already tested it in Foodscapes and it fails in local but not in production
+
+    // {
+    //   name: 'firefox',
+    //   use: { ...devices['Desktop Firefox'] },
+    // },
+
     // {
     //   name: 'webkit',
     //   use: { ...devices['Desktop Safari'] },
