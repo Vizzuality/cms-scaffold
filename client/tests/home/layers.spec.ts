@@ -33,9 +33,10 @@ test('add one layer', async ({ page }) => {
 
   await expect(page).toHaveURL(new RegExp(`.*?layers=\\[${id}\\]`));
 
-  await page.waitForTimeout(1000);
   const sidebar = page.getByTestId('sidebar');
-  await expect(sidebar).toHaveScreenshot(`layers-${id}.png`);
+  await expect(sidebar).toHaveScreenshot(`layers-${id}.png`, {
+    timeout: 1000,
+  });
 });
 
 test('add all layers', async ({ page }) => {
@@ -52,7 +53,8 @@ test('add all layers', async ({ page }) => {
 
   await expect(page).toHaveURL(new RegExp(`.*?layers=\\[${ids}\\]`));
 
-  await page.waitForTimeout(1000);
   const sidebar = page.getByTestId('sidebar');
-  await expect(sidebar).toHaveScreenshot(`layers-${ids}.png`);
+  await expect(sidebar).toHaveScreenshot(`layers-${ids}.png`, {
+    timeout: 1000,
+  });
 });

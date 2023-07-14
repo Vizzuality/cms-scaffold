@@ -43,7 +43,7 @@ export default defineConfig({
 
     // DISABLING SAFARI AND FIREFOX TESTS FOR NOW because of this
     // https://github.com/facebookexperimental/Recoil/issues/1994
-    // RecoilURLSync is not working in Safari
+    // RecoilURLSync is not working in Safari, Firefox
     // I have already tested it in Foodscapes and it fails in local but not in production
 
     // {
