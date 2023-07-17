@@ -1,7 +1,7 @@
 export const LAYERS = {
   data: [
     {
-      id: 1,
+      id: 4,
       attributes: {
         title: 'Layer 1',
       },
