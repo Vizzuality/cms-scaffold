@@ -1,28 +1,12 @@
 import { test, expect } from '@playwright/test';
 
 import { homeInterceptions } from '../fixtures/home-interceptions';
-import { DATASETS } from '../mock/datasets';
 import { LAYERS } from '../mock/layers';
 
 const LAYER_IDS = LAYERS.data.map((layer) => layer.id).reverse();
 
 test.beforeEach(async ({ page }) => {
-  // await homeInterceptions(page);
-  await page.route(/.*\/api\/datasets.*/, (route) => {
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(DATASETS),
-    });
-  });
-
-  await page.route(/.*\/api\/layers\?filters/, (route) => {
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(LAYERS),
-    });
-  });
+  await homeInterceptions(page);
 });
 
 test('get layers from url', async ({ page }) => {
