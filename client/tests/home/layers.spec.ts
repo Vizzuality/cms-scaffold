@@ -3,8 +3,6 @@ import { test, expect } from '@playwright/test';
 import { DATASETS } from '../mock/datasets';
 import { LAYERS } from '../mock/layers';
 
-const LAYER_IDS = LAYERS.data.map((layer) => layer.id).reverse();
-
 test.beforeEach(async ({ page }) => {
   await page.route(/.*\/api\/datasets/, (route) => {
     route.fulfill({
