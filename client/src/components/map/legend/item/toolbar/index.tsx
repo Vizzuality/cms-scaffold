@@ -20,6 +20,7 @@ export const LegendItemToolbar: React.FC<LegendItemToolbarProps> = ({
   onChangeOpacity,
   onChangeVisibility,
   onChangeExpand,
+  layerId,
 }: LegendItemToolbarProps) => {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const { opacity = 1, visibility = true, expand = true } = settings || {};
@@ -42,6 +43,7 @@ export const LegendItemToolbar: React.FC<LegendItemToolbarProps> = ({
                     className={cn({
                       'pointer-events-none': popoverOpen,
                     })}
+                    data-testid={`legend-${layerId}-toolbar-opacity`}
                   >
                     <LegendItemButton Icon={Droplet} value={opacity} selected />
                   </TooltipTrigger>
@@ -73,6 +75,7 @@ export const LegendItemToolbar: React.FC<LegendItemToolbarProps> = ({
                     onValueChange={(value) => {
                       if (onChangeOpacity) onChangeOpacity(value[0]);
                     }}
+                    data-testid={`legend-${layerId}-toolbar-opacity-slider`}
                   />
                 </div>
                 <PopoverArrow className="z-0 block fill-white" width={11} height={5} />
@@ -93,8 +96,12 @@ export const LegendItemToolbar: React.FC<LegendItemToolbarProps> = ({
                 onClick={() => {
                   if (onChangeVisibility) onChangeVisibility(!visibility);
                 }}
+                data-testid={`legend-${layerId}-toolbar-visibility`}
               >
-                <LegendItemButton Icon={visibility ? Eye : EyeOff} />
+                <LegendItemButton
+                  data-testid={`legend-${layerId}-toolbar-visibility`}
+                  Icon={visibility ? Eye : EyeOff}
+                />
               </TooltipTrigger>
 
               <TooltipContent side="top" align="end" alignOffset={-10}>
@@ -117,6 +124,7 @@ export const LegendItemToolbar: React.FC<LegendItemToolbarProps> = ({
                     className={cn({
                       'pointer-events-none': popoverOpen,
                     })}
+                    data-testid={`legend-${layerId}-toolbar-info`}
                   >
                     <LegendItemButton Icon={Info} />
                   </TooltipTrigger>
@@ -128,7 +136,10 @@ export const LegendItemToolbar: React.FC<LegendItemToolbarProps> = ({
                   <TooltipArrow className="fill-white" width={10} height={5} />
                 </TooltipContent>
 
-                <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
+                <DialogContent
+                  data-testid={`legend-${layerId}-toolbar-info-dialog`}
+                  onCloseAutoFocus={(e) => e.preventDefault()}
+                >
                   {InfoContent}
                 </DialogContent>
               </Tooltip>
@@ -151,6 +162,7 @@ export const LegendItemToolbar: React.FC<LegendItemToolbarProps> = ({
                 onClick={() => {
                   if (onChangeExpand) onChangeExpand(!expand);
                 }}
+                data-testid={`legend-${layerId}-toolbar-expand`}
               >
                 <LegendItemButton
                   Icon={ChevronDown}

@@ -64,6 +64,7 @@ export const LegendItem: React.FC<PropsWithChildren & LegendItemProps> = ({
                   type="button"
                   className="mt-0.5 cursor-pointer text-slate-800 transition-colors hover:text-slate-800/50"
                   {...listeners}
+                  data-testid={`legend-item-${id}-drag`}
                 >
                   <GripVertical className="h-5 w-5" />
                 </button>
@@ -86,6 +87,7 @@ export const LegendItem: React.FC<PropsWithChildren & LegendItemProps> = ({
               onChangeVisibility={onChangeVisibility}
               onChangeExpand={onChangeExpand}
               InfoContent={InfoContent}
+              layerId={id}
             />
           </header>
 

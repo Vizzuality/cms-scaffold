@@ -1,5 +1,5 @@
 import { DATASETS } from '../mock/datasets';
-import { LAYERS, LAYERS_DATA } from '../mock/layers';
+import { LAYERS, LAYER_1, LAYER_2 } from '../mock/layers';
 
 export const homeInterceptions = async (page) => {
   await page.route(/.*\/api\/datasets/, (route) => {
@@ -9,6 +9,7 @@ export const homeInterceptions = async (page) => {
       body: JSON.stringify(DATASETS),
     });
   });
+
   await page.route(/.*\/api\/layers\?filters/, (route) => {
     route.fulfill({
       status: 200,
@@ -17,19 +18,19 @@ export const homeInterceptions = async (page) => {
     });
   });
 
+  await page.route(/.*\/api\/layers\/1/, (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(LAYER_1),
+    });
+  });
+
   await page.route(/.*\/api\/layers\/2/, (route) => {
     route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(LAYERS_DATA[0]),
-    });
-  });
-
-  await page.route(/.*\/api\/layers\/4/, (route) => {
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(LAYERS_DATA[1]),
+      body: JSON.stringify(LAYER_2),
     });
   });
 };
