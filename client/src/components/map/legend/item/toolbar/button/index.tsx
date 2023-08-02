@@ -23,6 +23,8 @@ export const LegendItemButton = ({
           'fill-slate-800': selected,
         })}
         style={{ fillOpacity: selected ? value : 1 }}
+        data-testid="legend-item-button-icon"
+        data-value={value}
       />
       <span
         className={cn({

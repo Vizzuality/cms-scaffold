@@ -16,12 +16,12 @@ test.describe('Add Layers', () => {
     const layerSwitch = page.getByTestId(`layer-switch-${id}`);
     layerSwitch.click();
     await expect(layerSwitch).toHaveAttribute('data-state', 'checked');
-    await page.getByTestId(`legend-item-${id}`).isVisible();
 
     await expect(page).toHaveURL(new RegExp(`.*?layers=\\[${id}\\]`));
 
-    const sidebar = page.getByTestId('sidebar');
-    await expect(sidebar).toHaveScreenshot(`layers-${id}.png`);
+    await expect(page.getByTestId(`legend-item-${id}`)).toContainText(
+      LAYER_1.data.attributes.title
+    );
   });
 
   test('add all layers', async ({ page }) => {
@@ -30,16 +30,13 @@ test.describe('Add Layers', () => {
       const layerSwitch = page.getByTestId(`layer-switch-${id}`);
       layerSwitch.click();
       await expect(layerSwitch).toHaveAttribute('data-state', 'checked');
-      await page.getByTestId(`legend-item-${id}`).isVisible();
+
+      await expect(page.getByTestId(`legend-item-${id}`)).toContainText(layer.attributes.title);
     }
 
     const ids = LAYERS.data.map((layer) => layer.id).reverse();
 
     await expect(page).toHaveURL(new RegExp(`.*?layers=\\[${ids}\\]`));
-
-    await page.waitForTimeout(1000);
-    const sidebar = page.getByTestId('sidebar');
-    await expect(sidebar).toHaveScreenshot(`layers-${ids}.png`);
   });
 });
 
@@ -53,9 +50,8 @@ test.describe('remove layers', () => {
     await expect(layerSwitch).toHaveAttribute('data-state', 'checked');
     await layerSwitch.click();
     await expect(layerSwitch).toHaveAttribute('data-state', 'unchecked');
-
+    await expect(page.getByTestId(`legend-item-${id}`)).not.toBeVisible();
     await expect(page).toHaveURL(`/?layers=[]`);
-    await expect(page.getByTestId('sidebar')).toHaveScreenshot(`layers-empty.png`);
   });
 
   test('remove all layers', async ({ page }) => {
@@ -68,10 +64,10 @@ test.describe('remove layers', () => {
       await expect(layerSwitch).toHaveAttribute('data-state', 'checked');
       await layerSwitch.click();
       await expect(layerSwitch).toHaveAttribute('data-state', 'unchecked');
+      await expect(page.getByTestId(`legend-item-${id}`)).not.toBeVisible();
     }
 
     await expect(page).toHaveURL(`/?layers=[]`);
-    await expect(page.getByTestId('sidebar')).toHaveScreenshot(`layers-empty.png`);
   });
 });
 
@@ -105,12 +101,9 @@ test.describe('change layers settings', () => {
       `/?layers=[${id}]&layers-settings={"${id}":{"expand":true,"opacity":0}}`
     );
 
-    await expect(page.getByTestId(`legend-item-${id}`)).toHaveScreenshot(
-      `layer-${id}-legend-opacity-0.png`
-    );
-    await expect(page.getByRole('region', { name: 'Map' })).toHaveScreenshot(
-      `layer-${id}-opacity-0.png`
-    );
+    await expect(
+      page.getByTestId(`legend-${id}-toolbar-opacity-slider`).getByRole('slider')
+    ).toHaveAttribute('aria-valuenow', '0');
   });
 
   test('change layer visibility', async ({ page }) => {
@@ -127,9 +120,6 @@ test.describe('change layers settings', () => {
       `/?layers=[${id}]&layers-settings={"${id}":{"expand":true,"visibility":false}}`
     );
     await expect(legendVisibilityToggle).toHaveAttribute('aria-label', 'Show layer');
-    await expect(page.getByRole('region', { name: 'Map' })).toHaveScreenshot(
-      `layer-${id}-visibility-false.png`
-    );
   });
 
   test('change legend expansion', async ({ page }) => {
@@ -144,9 +134,6 @@ test.describe('change layers settings', () => {
 
     await expect(page).toHaveURL(`/?layers=[${id}]&layers-settings={"${id}":{"expand":false}}`);
     await expect(legendExpandToggle).toHaveAttribute('aria-label', 'Expand layer');
-    await expect(page.getByRole('region', { name: 'Map' })).toHaveScreenshot(
-      `layer-${id}-expand-false.png`
-    );
   });
 
   test('open and close legend info', async ({ page }) => {

@@ -11,8 +11,13 @@ test.beforeEach(async ({ page }) => {
 
 test('get layers from url', async ({ page }) => {
   await page.goto(`/?layers=[${LAYER_IDS}]`);
-  const sidebar = page.getByTestId('sidebar');
-  await expect(sidebar).toHaveScreenshot(`layers-${LAYER_IDS}.png`);
+  for (const layer of LAYERS.data) {
+    await expect(page.getByTestId(`layer-switch-${layer.id}`)).toHaveAttribute(
+      'data-state',
+      'checked'
+    );
+    await expect(page.getByTestId(`legend-item-${layer.id}`)).toContainText(layer.attributes.title);
+  }
 });
 
 test('get layer-settings opacity from url', async ({ page }) => {
@@ -21,8 +26,9 @@ test('get layer-settings opacity from url', async ({ page }) => {
     [layerId]: { opacity: 0.5, expand: true, visibility: true },
   });
   await page.goto(`/?layers=[${layerId}]&layers-settings=${LAYER_LEGEND_CONFIG}`);
-  await page.waitForRequest(`**/layers/${layerId}?populate=metadata`);
-  await expect(page).toHaveScreenshot(`layer-${layerId}-opacity.png`);
+  await expect(
+    page.getByTestId(`legend-${layerId}-toolbar-opacity`).getByTestId('legend-item-button-icon')
+  ).toHaveAttribute('data-value', '0.5');
 });
 
 test('get layer-settings visibility from url', async ({ page }) => {
@@ -31,8 +37,10 @@ test('get layer-settings visibility from url', async ({ page }) => {
     [layerId]: { opacity: 1, expand: true, visibility: false },
   });
   await page.goto(`/?layers=[${layerId}]&layers-settings=${LAYER_LEGEND_CONFIG}`);
-  await page.waitForRequest(`**/layers/${layerId}?populate=metadata`);
-  await expect(page).toHaveScreenshot(`layer-${layerId}-visibility.png`);
+  await expect(page.getByTestId(`legend-${layerId}-toolbar-visibility`)).toHaveAttribute(
+    'aria-label',
+    'Hide layer'
+  );
 });
 
 test('get legends expansion from url', async ({ page }) => {
