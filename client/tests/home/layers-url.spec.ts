@@ -39,7 +39,7 @@ test('get layer-settings visibility from url', async ({ page }) => {
   await page.goto(`/?layers=[${layerId}]&layers-settings=${LAYER_LEGEND_CONFIG}`);
   await expect(page.getByTestId(`legend-${layerId}-toolbar-visibility`)).toHaveAttribute(
     'aria-label',
-    'Hide layer'
+    'Show layer'
   );
 });
 
