@@ -22,7 +22,6 @@ COPY .browserlistrc \
      index.js \
      logger.js \
      next.config.mjs \
-     next-env.d.ts \
      package.json \
      postcss.config.js \
      README.md \
