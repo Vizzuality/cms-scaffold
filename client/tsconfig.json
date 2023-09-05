@@ -24,10 +24,5 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": [
-    "node_modules",
-    "src/types/generated/dataset.ts",
-    "src/types/generated/dataset-group.ts",
-    "src/types/generated/layer.ts"
-  ]
+  "exclude": ["node_modules"]
 }
