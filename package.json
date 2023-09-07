@@ -1,6 +1,6 @@
 {
   "name": "serverless-app-scaffold",
-  "packageManager": "yarn@3.6.0",
+  "packageManager": "yarn@3.6.3",
   "private": true,
   "workspaces": [
     "client",
