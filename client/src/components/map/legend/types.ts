@@ -65,6 +65,7 @@ export interface LegendItemProps extends LegendItemEvents {
 
 export interface LegendItemToolbarProps extends LegendItemEvents {
   className?: string;
+  layerId: number;
   // components
   InfoContent?: ReactNode;
   // settings

@@ -17,16 +17,17 @@ module.exports = {
           useInfinite: true,
           useInfiniteQueryParam: "'pagination[page]'",
           useMutation: true,
+          signal: true,
           options: {
             staleTime: 10000,
           },
-          signal: true
         },
         operations: {
           "get/datasets/{id}": {
             query: {
               useQuery: true,
               useInfinite: false,
+              useInfiniteQueryParam: undefined,
               signal: true,
               options: {
                 staleTime: 10000,
@@ -37,6 +38,7 @@ module.exports = {
             query: {
               useQuery: true,
               useInfinite: false,
+              useInfiniteQueryParam: undefined,
               signal: true,
               options: {
                 staleTime: 10000,
@@ -47,6 +49,7 @@ module.exports = {
             query: {
               useQuery: true,
               useInfinite: false,
+              useInfiniteQueryParam: undefined,
               signal: true,
               options: {
                 staleTime: 10000,

@@ -49,6 +49,7 @@ export const LegendItem: React.FC<PropsWithChildren & LegendItemProps> = ({
             'mb-1 w-full border border-slate-200 border-t-transparent': true,
             [className]: !!className,
           })}
+          data-testid={`legend-item-${id}`}
         >
           <header className="sticky top-0 z-10 flex items-start justify-between space-x-8 border-t border-slate-200 bg-white px-2.5 py-2.5">
             <div
@@ -63,6 +64,7 @@ export const LegendItem: React.FC<PropsWithChildren & LegendItemProps> = ({
                   type="button"
                   className="mt-0.5 cursor-pointer text-slate-800 transition-colors hover:text-slate-800/50"
                   {...listeners}
+                  data-testid={`legend-item-${id}-drag`}
                 >
                   <GripVertical className="h-5 w-5" />
                 </button>
@@ -85,6 +87,7 @@ export const LegendItem: React.FC<PropsWithChildren & LegendItemProps> = ({
               onChangeVisibility={onChangeVisibility}
               onChangeExpand={onChangeExpand}
               InfoContent={InfoContent}
+              layerId={id}
             />
           </header>
 

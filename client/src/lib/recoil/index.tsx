@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+
 import { RecoilURLSync, RecoilURLSyncOptions } from 'recoil-sync';
 
 import { useSyncURLNext } from './useSyncURLNext';
@@ -17,15 +19,13 @@ export const RecoilURLSyncNext: React.FC<Props> = ({ children, ...options }) => 
     decodedQueryParams,
   });
 
-  return (
-    <RecoilURLSync
-      {...{
-        ...defaultOptions,
-        ...options,
-        browserInterface,
-      }}
-    >
-      {children}
-    </RecoilURLSync>
-  );
+  const RECOIL_URL_SYNC_OPTIONS = useMemo(() => {
+    return {
+      ...defaultOptions,
+      ...options,
+      browserInterface,
+    };
+  }, [browserInterface, defaultOptions, options]);
+
+  return <RecoilURLSync {...RECOIL_URL_SYNC_OPTIONS}>{children}</RecoilURLSync>;
 };

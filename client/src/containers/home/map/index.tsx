@@ -122,7 +122,7 @@ export default function MapContainer() {
         layersInteractiveData?.data &&
         layersInteractiveData?.data.some((l) => {
           const attributes = l.attributes as LayerTyped;
-          return attributes?.interaction_config?.events.some((ev) => ev.type === 'click');
+          return attributes?.interaction_config?.events?.some((ev) => ev.type === 'click');
         })
       ) {
         const p = Object.assign({}, e, { features: e.features ?? [] });
