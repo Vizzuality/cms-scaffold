@@ -62,25 +62,25 @@ module "iam" {
 resource "random_password" "api_token_salt" {
   length           = 32
   special          = true
-  override_special = "!#$%&*()-_=+[]{}<>:?"
+  override_special = "!#%&*()-_=+[]{}<>:?"
 }
 
 resource "random_password" "admin_jwt_secret" {
   length           = 32
   special          = true
-  override_special = "!#$%&*()-_=+[]{}<>:?"
+  override_special = "!#%&*()-_=+[]{}<>:?"
 }
 
 resource "random_password" "transfer_token_salt" {
   length           = 32
   special          = true
-  override_special = "!#$%&*()-_=+[]{}<>:?"
+  override_special = "!#%&*()-_=+[]{}<>:?"
 }
 
 resource "random_password" "jwt_secret" {
   length           = 32
   special          = true
-  override_special = "!#$%&*()-_=+[]{}<>:?"
+  override_special = "!#%&*()-_=+[]{}<>:?"
 }
 
 locals {
@@ -98,7 +98,7 @@ locals {
     DATABASE_CLIENT                  = "postgres"
     DATABASE_HOST                    = module.staging.postgresql_host
     DATABASE_PORT                    = module.staging.postgresql_port
-    DATABASE_NAME                    = "project_staging"
+    DATABASE_NAME                    = module.staging.postgresql_db_name
     DATABASE_USERNAME                = module.staging.postgresql_username
     DATABASE_PASSWORD                = module.staging.postgresql_password
     DATABASE_SSL                     = true

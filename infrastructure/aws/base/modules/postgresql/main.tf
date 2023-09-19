@@ -8,7 +8,7 @@ resource "aws_db_instance" "postgresql" {
   engine_version          = var.rds_engine_version
   instance_class          = var.rds_instance_class
   availability_zone       = var.availability_zones[0]
-  db_name                 = var.database_name
+  db_name                 = replace(var.database_name, "-", "")
   username                = var.rds_user_name
   password                = random_password.postgresql_superuser.result
   backup_retention_period = 5

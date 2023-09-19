@@ -14,6 +14,10 @@ output "postgresql_password" {
   value = module.postgresql.password
 }
 
+output "postgresql_db_name" {
+  value = module.postgresql.db_name
+}
+
 output "beanstalk_environment_settings" {
   value = module.beanstalk.environment_settings
 }
