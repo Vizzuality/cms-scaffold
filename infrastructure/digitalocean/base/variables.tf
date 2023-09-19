@@ -54,3 +54,20 @@ variable "do_app_image_tag" {
   type        = string
   description = "Tag of image from DO container registry"
 }
+
+variable "repo_name" {
+  type        = string
+  description = "Name of the Github repository where the code is hosted"
+}
+
+variable "ga_tracking_id" {
+  type        = string
+  default     = ""
+  description = "Google Analytics tracking id"
+}
+
+variable "mapbox_api_token" {
+  type        = string
+  default     = ""
+  description = "MAPBOX api token"
+}

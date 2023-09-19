@@ -8,5 +8,5 @@ postgres_size           = "db-s-1vcpu-1gb"
 postgres_db_name        = "POSTGRES DB NAME"
 do_app_instance         = "basic-xs"
 do_app_instance_count   = 1
-do_app_image_tag        = "DOCKER IMAGE TAG"
-
+do_app_image_tag        = "latest"
+repo_name               = "REPO NAME"

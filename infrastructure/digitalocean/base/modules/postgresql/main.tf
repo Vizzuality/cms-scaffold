@@ -33,18 +33,3 @@ resource "digitalocean_project_resources" "postgres_cluster" {
   project = data.digitalocean_project.project.id
   resources = [digitalocean_database_cluster.postgres_cluster.urn]
 }
-
-resource "local_file" "user" {
-  content  = digitalocean_database_cluster.postgres_cluster.user
-  filename = "postgresql_username.txt"
-}
-
-resource "local_file" "password" {
-  content  = digitalocean_database_cluster.postgres_cluster.password
-  filename = "postgresql_password.txt"
-}
-
-resource "local_file" "host" {
-  content  = digitalocean_database_cluster.postgres_cluster.host
-  filename = "postgresql_host.txt"
-}

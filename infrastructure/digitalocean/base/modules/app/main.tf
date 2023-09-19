@@ -20,6 +20,13 @@ resource "digitalocean_app" "app" {
       instance_count     = var.do_app_instance_count
       instance_size_slug = var.do_app_instance
 
+      ##### FIRST RUN #####
+      ##### Uncomment the git block and comment image block if container repository does not have an image yet #####
+#       git {
+#         branch = "main"
+#         repo_clone_url = "https://github.com/digitalocean/sample-dockerfile.git"
+#       }
+
       image {
         registry_type = "DOCR"
         repository    = "${var.project_name}-${var.environment}-client"
@@ -37,6 +44,13 @@ resource "digitalocean_app" "app" {
       http_port          = 8081
       instance_count     = var.do_app_instance_count
       instance_size_slug = var.do_app_instance
+
+      ##### FIRST RUN #####
+      ##### Uncomment the git block and comment image block if container repository does not have an image yet #####
+#       git {
+#         branch = "main"
+#         repo_clone_url = "https://github.com/digitalocean/sample-dockerfile.git"
+#       }
 
       image {
         registry_type = "DOCR"
