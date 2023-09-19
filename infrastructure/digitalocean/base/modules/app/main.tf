@@ -1,16 +1,3 @@
-##
-# Module to build the DO App
-##
-
-terraform {
-  required_providers {
-    digitalocean = {
-      source = "digitalocean/digitalocean"
-      version = "~> 2.0"
-    }
-  }
-}
-
 data "digitalocean_project" "project" {
   name = var.project_name
 }
