@@ -1,0 +1,126 @@
+name: Run deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - staging
+    paths:
+      - 'client/**'
+      - 'cms/**'
+      - '.github/workflows/*'
+
+env:
+  PROJECT_NAME: "PROJECT_NAME"
+  IMAGE_REGISTRY: "registry.digitalocean.com/REGISTRY_NAME"
+
+jobs:
+  build_client_image:
+    name: Build Client image and push to DO Container Registry
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Extract branch name
+        shell: bash
+        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+        id: extract_branch
+
+      - name: Copy env variables to docker
+        env:
+          ENVIRONMENT: ${{ steps.extract_branch.outputs.branch == 'main' && 'PROD' || 'STAGING' }}
+        run: |
+          echo "${{ secrets[format('{0}_CLIENT_ENV_FILE', env.ENVIRONMENT)] }}" > client/.env.local
+
+      - name: Build and tag Client image
+        env:
+          IMAGE_NAME: ${{ env.PROJECT_NAME }}-${{ steps.extract_branch.outputs.branch == 'main' && 'production' || 'staging' }}-client
+        run: |
+          docker build -f client/Dockerfile.prod -t $IMAGE_REGISTRY/$IMAGE_NAME:$GITHUB_SHA .
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Log in to DO Container Registry
+        run: doctl registry login --expiry-seconds 600
+
+      - name: Push image to DigitalOcean Container Registry
+        env:
+          IMAGE_NAME: ${{ env.PROJECT_NAME }}-${{ steps.extract_branch.outputs.branch == 'main' && 'production' || 'staging' }}-client
+        run: docker push $IMAGE_REGISTRY/$IMAGE_NAME:$GITHUB_SHA
+
+  build_cms_image:
+    name: Build CMS image and push to DO Container Registry
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Extract branch name
+        shell: bash
+        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+        id: extract_branch
+
+      - name: Copy env variables to docker
+        env:
+          ENVIRONMENT: ${{ steps.extract_branch.outputs.branch == 'main' && 'PROD' || 'STAGING' }}
+        run: |
+          echo "${{ secrets[format('{0}_CMS_ENV_FILE', env.ENVIRONMENT)] }}" > cms/.env
+
+      - name: Build and tag CMS image
+        env:
+          IMAGE_NAME: ${{ env.PROJECT_NAME }}-${{ steps.extract_branch.outputs.branch == 'main' && 'production' || 'staging' }}-cms
+        run: |
+          docker build -f cms/Dockerfile.prod -t $IMAGE_REGISTRY/$IMAGE_NAME:$GITHUB_SHA .
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Log in to DO Container Registry
+        run: doctl registry login --expiry-seconds 600
+
+      - name: Push image to DigitalOcean Container Registry
+        env:
+          IMAGE_NAME: ${{ env.PROJECT_NAME }}-${{ steps.extract_branch.outputs.branch == 'main' && 'production' || 'staging' }}-cms
+        run: docker push $IMAGE_REGISTRY/$IMAGE_NAME:$GITHUB_SHA
+
+  deploy:
+    name: Deploy Client and CMS to DO APP Platform
+    needs: [build_client_image, build_cms_image]
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: DigitalOcean App Platform deployment
+        uses: digitalocean/app_action@v1.1.5
+        env:
+          IMAGE_NAME_CLIENT: ${{ env.PROJECT_NAME }}-${{ steps.extract_branch.outputs.branch == 'main' && 'production' || 'staging' }}-client
+          IMAGE_NAME_CMS: ${{ env.PROJECT_NAME }}-${{ steps.extract_branch.outputs.branch == 'main' && 'production' || 'staging' }}-cms
+        with:
+          app_name: ${{ env.PROJECT_NAME }}-${{ steps.extract_branch.outputs.branch == 'main' && 'production' || 'staging' }}
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          images: '[
+                  {
+                    "name": "${{ env.IMAGE_NAME_CLIENT }}",
+                    "image":{
+                      "registry_type": "DOCR",
+                      "repository": "${{ env.IMAGE_NAME_CLIENT }}",
+                      "tag": "${{ github.sha }}"
+                    }
+                  },
+                  {
+                    "name": "${{ env.IMAGE_NAME_CMS }}",
+                    "image":{
+                      "registry_type": "DOCR",
+                      "repository": "${{ env.IMAGE_NAME_CMS }}",
+                      "tag": "${{ github.sha }}"
+                    }
+                  }
+                ]'
