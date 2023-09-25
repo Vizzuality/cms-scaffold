@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "description": "A Strapi application",
   "scripts": {
-    "dev": "strapi develop",
+    "dev": "config-sync import -y && strapi develop",
     "start": "strapi start",
     "build": "strapi build",
     "strapi": "strapi",
@@ -16,6 +16,7 @@
     "@strapi/plugin-users-permissions": "4.11.2",
     "@strapi/strapi": "4.11.2",
     "pg": "8.8.0",
+    "strapi-plugin-config-sync": "1.1.3",
     "strapi-plugin-import-export-entries": "^1.21.0"
   },
   "devDependencies": {
