@@ -19,7 +19,7 @@ export const JSON_CONFIGURATION = new JSONConfiguration({
     //
     {},
     require('@deck.gl/layers'),
-    require('@deck.gl/aggregation-layers')
+    require('@deck.gl/aggregation-layers'),
   ),
   functions: FUNCTIONS,
   enumerations: {},
@@ -45,12 +45,15 @@ export const getParams = ({ params_config, settings = {} }: GetParamsProps) => {
   if (!params_config) {
     return {};
   }
-  return params_config.reduce((acc, p) => {
-    return {
-      ...acc,
-      [`${p.key}`]: settings[`${p.key}`] ?? p.default,
-    };
-  }, {} as Record<string, unknown>);
+  return params_config.reduce(
+    (acc, p) => {
+      return {
+        ...acc,
+        [`${p.key}`]: settings[`${p.key}`] ?? p.default,
+      };
+    },
+    {} as Record<string, unknown>,
+  );
 };
 
 /**
