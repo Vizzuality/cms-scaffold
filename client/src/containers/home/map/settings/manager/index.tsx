@@ -57,7 +57,7 @@ const MapSettingsManager = () => {
         }
       });
     },
-    [mapRef]
+    [mapRef],
   );
 
   const handleStyleLoad = useCallback(() => {
