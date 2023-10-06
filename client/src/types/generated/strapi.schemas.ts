@@ -525,6 +525,7 @@ export type LayerDatasetDataAttributesDatasetGroupDataAttributesCreatedByDataAtt
 
 export type LayerDatasetDataAttributesDatasetGroupDataAttributesCreatedByDataAttributesRolesDataItemAttributesPermissionsDataItemAttributes = {
   action?: string;
+  actionParameters?: unknown;
   subject?: string;
   properties?: unknown;
   conditions?: unknown;
@@ -997,6 +998,7 @@ export type DatasetGroupDatasetsDataItemAttributesDatasetGroupDataAttributesCrea
 
 export type DatasetGroupDatasetsDataItemAttributesDatasetGroupDataAttributesCreatedByDataAttributesRolesDataItemAttributesPermissionsDataItemAttributes = {
   action?: string;
+  actionParameters?: unknown;
   subject?: string;
   properties?: unknown;
   conditions?: unknown;
@@ -1393,6 +1395,7 @@ export type DatasetDatasetGroupDataAttributesDatasetsDataItemAttributesLayersDat
 
 export type DatasetDatasetGroupDataAttributesDatasetsDataItemAttributesLayersDataItemAttributesCreatedByDataAttributesRolesDataItemAttributesPermissionsDataItemAttributes = {
   action?: string;
+  actionParameters?: unknown;
   subject?: string;
   properties?: unknown;
   conditions?: unknown;
