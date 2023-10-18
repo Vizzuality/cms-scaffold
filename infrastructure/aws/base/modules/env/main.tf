@@ -1,15 +1,3 @@
-module "ecr" {
-  source = "../ecr"
-
-  project     = var.project
-  environment = var.environment
-  tags = {
-    project     = var.project,
-    environment = var.environment
-  }
-}
-
-
 resource "aws_security_group" "postgresql_access" {
   vpc_id      = var.vpc.id
   description = "SG allowing access to the Postgres SG"
@@ -29,6 +17,17 @@ resource "aws_security_group_rule" "port_forward_postgres" {
   protocol                 = "-1"
   source_security_group_id = module.postgresql.security_group_id
   security_group_id        = aws_security_group.postgresql_access.id
+}
+
+module "email" {
+  source = "../email"
+
+  domain = var.domain
+  region = var.aws_region
+}
+
+resource "aws_iam_access_key" "email_user_access_key" {
+  user = module.email.iam_user.name
 }
 
 module "postgresql" {
@@ -54,19 +53,20 @@ module "postgresql" {
 module "beanstalk" {
   source = "../beanstalk"
 
-  project                 = var.project
-  environment             = var.environment
-  region                  = var.aws_region
-  application_name        = "${var.project}-${var.environment}"
-  application_environment = "${var.project}-${var.environment}-environment"
-  solution_stack_name     = var.beanstalk_platform
-  tier                    = var.beanstalk_tier
-  tags                    = var.tags
-  vpc                     = var.vpc
-  public_subnets          = var.subnet_ids
-  elb_public_subnets      = var.subnet_ids
-  ec2_instance_type       = var.ec2_instance_type
-  rds_security_group_id   = aws_security_group.postgresql_access.id
-  domain                  = var.domain
-  acm_certificate         = aws_acm_certificate.acm_certificate
+  project                                       = var.project
+  environment                                   = var.environment
+  region                                        = var.aws_region
+  application_name                              = "${var.project}-${var.environment}"
+  application_environment                       = "${var.project}-${var.environment}-environment"
+  solution_stack_name                           = var.beanstalk_platform
+  tier                                          = var.beanstalk_tier
+  tags                                          = var.tags
+  vpc                                           = var.vpc
+  public_subnets                                = var.subnet_ids
+  elb_public_subnets                            = var.subnet_ids
+  ec2_instance_type                             = var.ec2_instance_type
+  rds_security_group_id                         = aws_security_group.postgresql_access.id
+  domain                                        = var.domain
+  acm_certificate                               = aws_acm_certificate.acm_certificate
+  elasticbeanstalk_iam_service_linked_role_name = var.elasticbeanstalk_iam_service_linked_role_name
 }

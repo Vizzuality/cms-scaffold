@@ -35,3 +35,35 @@ output "acm_certificate_arn" {
   description = "The ARN of the ACM certificate"
   value       = aws_acm_certificate.acm_certificate.arn
 }
+
+output "dkim_tokens" {
+  value = module.email.dkim_tokens
+}
+
+output "smtp_server_address" {
+  value = module.email.smtp_server_address
+}
+
+output "mx_record_name" {
+  value = module.email.mx_record_name
+}
+
+output "mx_record_value" {
+  value = module.email.mx_record_value
+}
+
+output "txt_record_name" {
+  value = module.email.txt_record_name
+}
+
+output "txt_record_value" {
+  value = module.email.txt_record_value
+}
+
+output "email_iam_user_access_key_id" {
+  value = aws_iam_access_key.email_user_access_key.id
+}
+
+output "email_iam_user_access_key_secret" {
+  value = aws_iam_access_key.email_user_access_key.secret
+}

@@ -3,4 +3,4 @@
 
 cd ./client && yarn types && yarn lint --fix && yarn check-types && git add src/types/generated/
 
-cd .. && cd ./cms && yarn config-sync export -y
+cd .. && cd ./cms && yarn config-sync export -y && git add config/sync

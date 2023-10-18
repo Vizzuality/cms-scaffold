@@ -104,11 +104,47 @@ locals {
     DATABASE_SSL                     = true
     DATABASE_SSL_REJECT_UNAUTHORIZED = false
 
+    AWS_REGION                = var.aws_region
+    AWS_SES_DOMAIN            = var.staging_domain
+    AWS_SES_ACCESS_KEY_ID     = module.staging.email_iam_user_access_key_id
+    AWS_SES_ACCESS_KEY_SECRET = module.staging.email_iam_user_access_key_secret
   }
   staging_client_env = {
     NEXT_PUBLIC_URL            = "https://${var.staging_domain}"
     NEXT_PUBLIC_ENVIRONMENT    = "production"
     NEXT_PUBLIC_API_URL        = "https://${var.staging_domain}/cms/api"
+    NEXT_PUBLIC_GA_TRACKING_ID = var.ga_tracking_id
+    LOG_LEVEL                  = "info"
+  }
+  production_api_env = {
+    HOST                = "0.0.0.0"
+    PORT                = 1337
+    APP_KEYS            = "toBeModified1,toBeModified2"
+    API_TOKEN_SALT      = random_password.api_token_salt.result
+    ADMIN_JWT_SECRET    = random_password.admin_jwt_secret.result
+    TRANSFER_TOKEN_SALT = random_password.transfer_token_salt.result
+    JWT_SECRET          = random_password.jwt_secret.result
+    API_BASE_URL        = "https://${var.production_domain}/cms/"
+
+    # Database
+    DATABASE_CLIENT                  = "postgres"
+    DATABASE_HOST                    = module.production.postgresql_host
+    DATABASE_PORT                    = module.production.postgresql_port
+    DATABASE_NAME                    = module.production.postgresql_db_name
+    DATABASE_USERNAME                = module.production.postgresql_username
+    DATABASE_PASSWORD                = module.production.postgresql_password
+    DATABASE_SSL                     = true
+    DATABASE_SSL_REJECT_UNAUTHORIZED = false
+
+    AWS_REGION                = var.aws_region
+    AWS_SES_DOMAIN            = var.production_domain
+    AWS_SES_ACCESS_KEY_ID     = module.production.email_iam_user_access_key_id
+    AWS_SES_ACCESS_KEY_SECRET = module.production.email_iam_user_access_key_secret
+  }
+  production_client_env = {
+    NEXT_PUBLIC_URL            = "https://${var.production_domain}"
+    NEXT_PUBLIC_ENVIRONMENT    = "production"
+    NEXT_PUBLIC_API_URL        = "https://${var.production_domain}/cms/api"
     NEXT_PUBLIC_GA_TRACKING_ID = var.ga_tracking_id
     LOG_LEVEL                  = "info"
   }
@@ -120,28 +156,69 @@ module "github_values" {
   secret_map = {
     PIPELINE_USER_ACCESS_KEY_ID     = module.iam.pipeline_user_access_key_id
     PIPELINE_USER_SECRET_ACCESS_KEY = module.iam.pipeline_user_access_key_secret
+    CMS_REPOSITORY_NAME             = module.cms_ecr.repository_name
+    CLIENT_REPOSITORY_NAME          = module.client_ecr.repository_name
     STAGING_CMS_ENV_FILE            = join("\n", [for key, value in local.staging_cms_env : "${key}=${value}"])
     STAGING_CLIENT_ENV_FILE         = join("\n", [for key, value in local.staging_client_env : "${key}=${value}"])
     STAGING_DOMAIN                  = var.staging_domain
+    PRODUCTION_API_ENV_FILE         = join("\n", [for key, value in local.production_api_env : "${key}=${value}"])
+    PRODUCTION_CLIENT_ENV_FILE      = join("\n", [for key, value in local.production_client_env : "${key}=${value}"])
+    PRODUCTION_DOMAIN               = var.production_domain
   }
   variable_map = {
     AWS_REGION = var.aws_region
   }
 }
 
+module "cms_ecr" {
+  source = "./modules/ecr"
+
+  project_name = var.project_name
+  repo_name    = "cms"
+}
+
+module "client_ecr" {
+  source = "./modules/ecr"
+
+  project_name = var.project_name
+  repo_name    = "client"
+}
+
+resource "aws_iam_service_linked_role" "elasticbeanstalk" {
+  aws_service_name = "elasticbeanstalk.amazonaws.com"
+}
 
 module "staging" {
-  source             = "./modules/env"
-  domain             = var.staging_domain
-  project            = var.project_name
-  environment        = "staging"
-  aws_region         = var.aws_region
-  vpc                = data.aws_vpc.default_vpc
-  subnet_ids         = local.subnets_with_ec2_instance_type_offering_ids
-  availability_zones = data.aws_availability_zones.azs_with_ec2_instance_type_offering.names
-  beanstalk_platform = var.beanstalk_platform
-  beanstalk_tier     = var.beanstalk_tier
-  ec2_instance_type  = var.ec2_instance_type
-  rds_engine_version = var.rds_engine_version
-  rds_instance_class = var.rds_instance_class
+  source                                        = "./modules/env"
+  domain                                        = var.staging_domain
+  project                                       = var.project_name
+  environment                                   = "staging"
+  aws_region                                    = var.aws_region
+  vpc                                           = data.aws_vpc.default_vpc
+  subnet_ids                                    = local.subnets_with_ec2_instance_type_offering_ids
+  availability_zones                            = data.aws_availability_zones.azs_with_ec2_instance_type_offering.names
+  beanstalk_platform                            = var.beanstalk_platform
+  beanstalk_tier                                = var.beanstalk_tier
+  ec2_instance_type                             = var.ec2_instance_type
+  rds_engine_version                            = var.rds_engine_version
+  rds_instance_class                            = var.rds_instance_class
+  elasticbeanstalk_iam_service_linked_role_name = aws_iam_service_linked_role.elasticbeanstalk.name
 }
+
+module "production" {
+  source                                        = "./modules/env"
+  domain                                        = var.production_domain
+  project                                       = var.project_name
+  environment                                   = "production"
+  aws_region                                    = var.aws_region
+  vpc                                           = data.aws_vpc.default_vpc
+  subnet_ids                                    = local.subnets_with_ec2_instance_type_offering_ids
+  availability_zones                            = data.aws_availability_zones.azs_with_ec2_instance_type_offering.names
+  beanstalk_platform                            = var.beanstalk_platform
+  beanstalk_tier                                = var.beanstalk_tier
+  ec2_instance_type                             = var.ec2_instance_type
+  rds_engine_version                            = var.rds_engine_version
+  rds_instance_class                            = var.rds_instance_class
+  elasticbeanstalk_iam_service_linked_role_name = aws_iam_service_linked_role.elasticbeanstalk.name
+}
+

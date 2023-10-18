@@ -23,6 +23,10 @@ variable "staging_domain" {
   type = string
 }
 
+variable "production_domain" {
+  type = string
+}
+
 #
 # Elastic Beanstalk configuration
 # concepts: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/concepts.html
@@ -82,4 +86,10 @@ variable "ga_tracking_id" {
   type        = string
   default     = ""
   description = "Google Analytics tracking id"
+}
+
+variable "cms_url" {
+  type        = string
+  default     = ""
+  description = "URL for the CMS application"
 }
