@@ -1,21 +1,39 @@
-# Serverless App scaffold
+# CMS scaffold: Strapi + Next JS + Mapbox GL
 
-This is a scaffold for a serverless app. It contains the next:
+This is a scaffold for an CMS, api and a client app. It contains the next:
 
-- A map with layers and legend
-- Dataset and layer management
-- CMS for data management: layers, datasets, legend and metadata
-- An default layout of sidebar and map
+- A client based on Next JS:
+  - Including a map (MapboxGL) with layers and legend
+  - Dataset and layer management
+  - An default layout of sidebar and map
+- CMS for data management based on Strapi CMS:
+  - layers
+  - datasets
+  - legend
+  - metadata
+- API (REST) provided by Strapi CMS
+- An infrastructure based on Docker and Terraform:
+  - AWS deployment
+  - Digital Ocean deployment
+
+**This scaffold is only an example of how to develop an application with CMS, an API and a client app. Please adapt your project needs to this scaffold, or use it as a reference.**
 
 ## Getting started
 
-Install all dependencies:
+The scaffold is divided in 4 directories:
+
+- `./cms/`: [Strapi CMS](https://strapi.io/) with API included
+- `./client/`: [Next JS](https://nextjs.org/) client app
+- `./infrastructure/`: Terraform files for AWS and Digital Ocean
+
+
+### Client
+
+Go to the `client/` directory and install the dependencies:
 
 ```bash
 yarn install
 ```
-
-### Client
 
 Copy the .env.example file to .env.local and fill in the NEXT_PUBLIC_API_URL field with the url of the API. (By default it's http://localhost:1337)
 
@@ -24,12 +42,18 @@ Add the NEXT_PUBLIC_MAPBOX_TOKEN field with the Mapbox token of the project. (Yo
 Start the client with:
 
 ```bash
-yarn client dev
+yarn dev
 ```
 
-### Strapi Server CMS
+### Strapi CMS and API
 
-1 - Make sure you have Postgres installed and a Postgres database running locally.
+Go to the `cms/` directory and install the dependencies:
+
+```bash
+yarn install
+```
+
+Make sure you have Postgres installed and a Postgres database running locally.
 
 You can download Postgres [here](https://www.postgresql.org/download/). Or the Posgres Mac app [here](https://postgresapp.com/).
 
@@ -51,34 +75,40 @@ And then run:
 CREATE USER <username> SUPERUSER PASSWORD <'passwordstring'>
 ```
 
-2 - Copy the .env.example file to .env and fill in the DATABASE_NAME, DATABASE_USERNAME and DATABASE_PASSWORD fields with your database credentials. Maybe you need to change the DATABASE_HOST and DATABASE_PORT fields too.
+Copy the .env.example file to .env and fill in the DATABASE_NAME, DATABASE_USERNAME and DATABASE_PASSWORD fields with your database credentials. Maybe you need to change the DATABASE_HOST and DATABASE_PORT fields too.
 
-3 - Then run the cms:
+Then run the cms:
 
 ```bash
-yarn cms dev
+yarn dev
 ```
 
 The admin page should open in your browser, if not go to http://localhost:1337/admin
 
-4 - Create a new user so you can access the admin panel.
+Finally, create a new user so you can access the admin panel.
 
 #### Seeding data
 
 To seed the database with some data, run:
 
 ```bash
-yarn cms seed
+yarn seed
 ```
 
 All the data and configuration should be imported.
 
-## Types for API
+### Types for API
 
-To generate the types for the API, run:
+We have configured [Orval](https://orval.dev/) to generate types for the API to be used on the client.
+
+Go to the `client/` directory and follow the [Client](#client) and [Strapi](#strapi-cms-and-api) instructions.
+
+Make sure the API was configured and it created a `./src/extensions/documentation/documentation/1.0.0/full_documentation.json` file.
+
+And, to generate the types for the API, run:
 
 ```bash
-yarn types build
+yarn types
 ```
 
 ## Usage with Docker (recommended)
