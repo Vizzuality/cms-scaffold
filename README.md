@@ -47,45 +47,7 @@ yarn dev
 
 ### Strapi CMS and API
 
-Go to the `cms/` directory and install the dependencies:
-
-```bash
-yarn install
-```
-
-Make sure you have Postgres installed and a Postgres database running locally.
-
-You can download Postgres [here](https://www.postgresql.org/download/). Or the Posgres Mac app [here](https://postgresapp.com/).
-
-If you don't already have a database, you can create it running:
-
-```bash
-createdb <database_name>
-```
-
-To create a user on the database run:
-
-```bash
-psql <database_name>
-```
-
-And then run:
-
-```sql
-CREATE USER <username> SUPERUSER PASSWORD <'passwordstring'>
-```
-
-Copy the .env.example file to .env and fill in the DATABASE_NAME, DATABASE_USERNAME and DATABASE_PASSWORD fields with your database credentials. Maybe you need to change the DATABASE_HOST and DATABASE_PORT fields too.
-
-Then run the cms:
-
-```bash
-yarn dev
-```
-
-The admin page should open in your browser, if not go to http://localhost:1337/admin
-
-Finally, create a new user so you can access the admin panel.
+For detailed instructions on how to run the Strapi CMS and API, please refer to the `cms/README.md` file.
 
 #### Seeding data
 
@@ -95,7 +57,7 @@ To seed the database with some data, run:
 yarn seed
 ```
 
-All the data and configuration should be imported.
+You should now have sample data in the database.
 
 ### Types for API
 
