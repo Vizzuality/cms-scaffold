@@ -24,13 +24,16 @@ jobs:
     - uses: actions/checkout@v3
     - uses: actions/setup-node@v3
       with:
-        node-version: 18
+        node-version-file: client/.nvmrc
     - name: Install dependencies
-      run: yarn client install
+      working-directory: client
+      run: yarn install --immutable
     - name: Install Playwright Browsers
-      run: yarn client playwright install --with-deps
+      working-directory: client
+      run: yarn playwright install --with-deps chromium firefox webkit
     - name: Run Playwright tests
-      run: yarn client playwright test
+      working-directory: client
+      run: yarn playwright test
       env:
         PLAYWRIGHT_TEST_BASE_URL: ${{ needs.test_setup.outputs.preview_url }}
     - uses: actions/upload-artifact@v3
