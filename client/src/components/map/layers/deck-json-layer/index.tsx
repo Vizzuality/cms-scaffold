@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
 'use client';
 
 import { useEffect } from 'react';
@@ -9,6 +8,7 @@ import { useDeckMapboxOverlayContext } from '@/components/map/provider';
 
 export type DeckJsonLayerProps<T> = LayerProps &
   Partial<T> & {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     config: any;
   };
 
