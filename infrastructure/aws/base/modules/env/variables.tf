@@ -50,7 +50,6 @@ variable "ec2_instance_type" {
 variable "rds_backup_retention_period" {
   type        = number
   description = "Number of days to retain backup for the database"
-  default     = 7
 }
 
 variable "rds_log_retention_period" {

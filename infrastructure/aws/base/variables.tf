@@ -19,14 +19,6 @@ variable "repo_name" {
   description = "Name of the Github repository where the code is hosted"
 }
 
-variable "staging_domain" {
-  type = string
-}
-
-variable "production_domain" {
-  type = string
-}
-
 #
 # Elastic Beanstalk configuration
 # concepts: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/concepts.html
@@ -41,14 +33,6 @@ variable "beanstalk_tier" {
   type        = string
   description = "The Elastic Beanstalk tier to use. This needs to be WebServer"
   default     = "WebServer"
-}
-
-#
-# EC2 configuration
-#
-variable "ec2_instance_type" {
-  type        = string
-  description = "The type of EC2 instance to launch"
 }
 
 #
@@ -92,4 +76,34 @@ variable "cms_url" {
   type        = string
   default     = ""
   description = "URL for the CMS application"
+}
+
+# Staging configuration
+variable "staging_domain" {
+  type = string
+}
+
+variable "staging_ec2_instance_type" {
+  type        = string
+  description = "The type of EC2 instance to launch on the staging environment"
+}
+
+variable "staging_rds_backup_retention_period" {
+  type        = number
+  description = "Time in days to keep staging db backups"
+}
+
+# Production configuration
+variable "production_domain" {
+  type = string
+}
+
+variable "production_ec2_instance_type" {
+  type        = string
+  description = "The type of EC2 instance to launch on the production environment"
+}
+
+variable "production_rds_backup_retention_period" {
+  type        = number
+  description = "Time in days to keep production db backups"
 }
