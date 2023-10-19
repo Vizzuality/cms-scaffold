@@ -145,7 +145,7 @@ locals {
   staging_cms_env = {
     HOST                = "0.0.0.0"
     PORT                = 1337
-    APP_KEYS            = "toBeModified1,toBeModified2"
+    APP_KEYS            = random_password.staging_app_key.result
     API_TOKEN_SALT      = random_password.staging_api_token_salt.result
     ADMIN_JWT_SECRET    = random_password.staging_admin_jwt_secret.result
     TRANSFER_TOKEN_SALT = random_password.staging_transfer_token_salt.result
@@ -177,7 +177,7 @@ locals {
   production_api_env = {
     HOST                = "0.0.0.0"
     PORT                = 1337
-    APP_KEYS            = "toBeModified1,toBeModified2"
+    APP_KEYS            = random_password.production_app_key.result
     API_TOKEN_SALT      = random_password.production_api_token_salt.result
     ADMIN_JWT_SECRET    = random_password.production_admin_jwt_secret.result
     TRANSFER_TOKEN_SALT = random_password.production_transfer_token_salt.result
