@@ -40,11 +40,11 @@ resource "random_password" "postgresql_superuser" {
 resource "aws_security_group" "postgresql" {
   vpc_id                 = var.vpc_id
   description            = "Security Group for PostgreSQL DB"
-  name                   = "PostgreSQL-ingress"
+  name                   = "${var.project}-${var.environment}-PostgreSQL-ingress"
   revoke_rules_on_delete = true
-  tags = merge(
+  tags                   = merge(
     {
-      Name = "RDS SG"
+      Name = "${var.project} ${var.environment} RDS SG"
     },
     var.tags
   )
@@ -71,7 +71,7 @@ resource "aws_secretsmanager_secret" "postgresql-admin" {
 
 resource "aws_secretsmanager_secret_version" "postgresql-admin" {
 
-  secret_id = aws_secretsmanager_secret.postgresql-admin.id
+  secret_id     = aws_secretsmanager_secret.postgresql-admin.id
   secret_string = jsonencode({
     "username" = var.rds_user_name,
     "engine"   = "postgresql",
@@ -83,7 +83,7 @@ resource "aws_secretsmanager_secret_version" "postgresql-admin" {
 
 data "template_file" "secrets_postgresql-writer" {
   template = file("${path.module}/iam_policy_secrets_read.json.tpl")
-  vars = {
+  vars     = {
     secret_arn = aws_secretsmanager_secret.postgresql-admin.arn
   }
 }
