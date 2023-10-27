@@ -174,7 +174,7 @@ locals {
     NEXT_PUBLIC_GA_TRACKING_ID = var.ga_tracking_id
     LOG_LEVEL                  = "info"
   }
-  production_api_env = {
+  production_cms_env = {
     HOST                = "0.0.0.0"
     PORT                = 1337
     APP_KEYS            = random_password.production_app_key.result
@@ -219,7 +219,7 @@ module "github_values" {
     STAGING_CMS_ENV_FILE            = join("\n", [for key, value in local.staging_cms_env : "${key}=${value}"])
     STAGING_CLIENT_ENV_FILE         = join("\n", [for key, value in local.staging_client_env : "${key}=${value}"])
     STAGING_DOMAIN                  = var.staging_domain
-    PRODUCTION_API_ENV_FILE         = join("\n", [for key, value in local.production_api_env : "${key}=${value}"])
+    PRODUCTION_CMS_ENV_FILE         = join("\n", [for key, value in local.production_cms_env : "${key}=${value}"])
     PRODUCTION_CLIENT_ENV_FILE      = join("\n", [for key, value in local.production_client_env : "${key}=${value}"])
     PRODUCTION_DOMAIN               = var.production_domain
   }

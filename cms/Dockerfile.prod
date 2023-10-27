@@ -29,7 +29,7 @@ COPY .env \
      package.json \
      entrypoint.sh \
      tsconfig.json \
-     yarn.lock
+     yarn.lock \
      ./
 
 RUN yarn install
