@@ -29,7 +29,7 @@ jobs:
               - '.github/workflows/**'
 
       - name: Extract branch name
-        if: steps.client-changes.outputs.client == 'true'
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.client-changes.outputs.client == 'true' }}
         run: |
           {
             branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
@@ -39,12 +39,12 @@ jobs:
         id: extract_branch
 
       - name: Copy env variables to docker
-        if: steps.client-changes.outputs.client == 'true'
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.client-changes.outputs.client == 'true' }}
         run: |
           echo "${{ steps.extract_branch.outputs.branch == 'main' && secrets.PRODUCTION_CLIENT_ENV_FILE || secrets[format('{0}_CLIENT_ENV_FILE', steps.extract_branch.outputs.branch_upper)] }}" > client/.env.local
 
       - name: Configure AWS credentials
-        if: steps.client-changes.outputs.client == 'true'
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.client-changes.outputs.client == 'true' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.PIPELINE_USER_ACCESS_KEY_ID }}
@@ -52,18 +52,18 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Login to Amazon ECR
-        if: steps.client-changes.outputs.client == 'true'
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.client-changes.outputs.client == 'true' }}
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
         with:
           mask-password: 'true'
 
       - name: Set up Docker Buildx
-        if: steps.client-changes.outputs.client == 'true'
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.client-changes.outputs.client == 'true' }}
         uses: docker/setup-buildx-action@v3
 
       - name: Build, tag, and push Client image to Amazon ECR
-        if: steps.client-changes.outputs.client == 'true'
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.client-changes.outputs.client == 'true' }}
         uses: docker/build-push-action@v5
         with:
           context: ./client
@@ -92,7 +92,7 @@ jobs:
               - '.github/workflows/**'
 
       - name: Extract branch name
-        if: steps.cms-changes.outputs.cms == 'true'
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.cms-changes.outputs.cms == 'true' }}
         run: |
           {
             branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
@@ -102,12 +102,12 @@ jobs:
         id: extract_branch
 
       - name: Copy env variables to docker
-        if: steps.cms-changes.outputs.cms == 'true'
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.cms-changes.outputs.cms == 'true' }}
         run: |
           echo "${{ steps.extract_branch.outputs.branch == 'main' && secrets.PRODUCTION_CMS_ENV_FILE || secrets[format('{0}_CMS_ENV_FILE', steps.extract_branch.outputs.branch_upper)] }}" > cms/.env
 
       - name: Configure AWS credentials
-        if: steps.cms-changes.outputs.cms == 'true'
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.cms-changes.outputs.cms == 'true' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.PIPELINE_USER_ACCESS_KEY_ID }}
@@ -115,18 +115,18 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Login to Amazon ECR
-        if: steps.cms-changes.outputs.cms == 'true'
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.cms-changes.outputs.cms == 'true' }}
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
         with:
           mask-password: 'true'
 
       - name: Set up Docker Buildx
-        if: steps.cms-changes.outputs.cms == 'true'
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.cms-changes.outputs.cms == 'true' }}
         uses: docker/setup-buildx-action@v3
 
       - name: Build, tag, and push API image to Amazon ECR
-        if: steps.cms-changes.outputs.cms == 'true'
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.cms-changes.outputs.cms == 'true' }}
         uses: docker/build-push-action@v5
         with:
           context: ./cms
