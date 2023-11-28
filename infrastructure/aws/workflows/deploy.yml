@@ -73,7 +73,7 @@ jobs:
           push: true
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/${{ secrets.CLIENT_REPOSITORY_NAME }}:${{ github.sha }}
-            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.CMS_REPOSITORY_NAME }}:${{ steps.extract_branch.outputs.branch == 'main' && 'production' || steps.extract_branch.outputs.branch }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.CLIENT_REPOSITORY_NAME }}:${{ steps.extract_branch.outputs.branch == 'main' && 'production' || steps.extract_branch.outputs.branch }}
 
   build_cms_image:
     name: Build CMS image and push to Amazon ECR

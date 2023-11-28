@@ -56,7 +56,8 @@ locals {
 }
 
 module "iam" {
-  source = "./modules/iam"
+  source  = "./modules/iam"
+  project = var.project_name
 }
 
 #
