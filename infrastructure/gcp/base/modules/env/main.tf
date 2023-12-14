@@ -134,6 +134,10 @@ resource "random_password" "app_key" {
 }
 
 locals {
+  frontend_lb_url    = "https://${local.domain}"
+  cms_lb_url         = "https://${local.domain}/${var.backend_path_prefix}/"
+  api_lb_url         = "https://${local.domain}/${var.backend_path_prefix}/api/"
+
   cms_env = {
     HOST = "0.0.0.0"
     PORT = 1337
@@ -148,7 +152,7 @@ locals {
     ADMIN_JWT_SECRET    = random_password.admin_jwt_secret.result
     TRANSFER_TOKEN_SALT = random_password.transfer_token_salt.result
     JWT_SECRET          = random_password.jwt_secret.result
-    CMS_URL = "https://${local.domain}/${var.backend_path_prefix}/"
+    CMS_URL = local.cms_lb_url
 
     DATABASE_CLIENT   = "postgres"
     DATABASE_HOST     = module.database.database_host
@@ -158,8 +162,8 @@ locals {
     DATABASE_SSL      = false
   }
   client_env = {
-    NEXT_PUBLIC_URL         = "https://${local.domain}"
-    NEXT_PUBLIC_API_URL     = "https://${local.domain}/${var.backend_path_prefix}/api/"
+    NEXT_PUBLIC_URL         = local.frontend_lb_url
+    NEXT_PUBLIC_API_URL     = local.api_lb_url
     NEXT_PUBLIC_ENVIRONMENT = "production"
     LOG_LEVEL               = "info"
   }
