@@ -2,12 +2,12 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "~> 4.84"
+      version = "~> 5.9"
     }
 
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = "~> 4.84"
+      version = "~> 5.9"
     }
 
     random = {
@@ -22,9 +22,17 @@ provider "google" {
   project = var.gcp_project_id
   region  = var.gcp_region
   zone    = var.gcp_zone
+
+  default_labels = {
+    managed-by = "terraform"
+  }
 }
 
 provider "google-beta" {
   project = var.gcp_project_id
   region  = var.gcp_region
+
+  default_labels = {
+    managed-by = "terraform"
+  }
 }
