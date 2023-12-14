@@ -1,17 +1,17 @@
 # The workflow uses GH Secrets managed by Terraform:
-# - GCP_PROJECT_ID
-# - GCP_REGION
-# - <environment>_GCP_SA_KEY - credentials json for authentication
-# - <environment>_CLIENT_ENV_TF_MANAGED
-# - <environment>_CMS_ENV_TF_MANAGED
-# - <environment>_CLIENT_REPOSITORY
-# - <environment>_CLIENT_SERVICE
-# - <environment>_CMS_REPOSITORY
-# - <environment>_CMS_SERVICE
-# - <environment>_ANALYSIS_CF_NAME
+# - TF_GCP_PROJECT_ID
+# - TF_GCP_REGION
+# - TF_[STAGING|PRODUCTION]_GCP_SA_KEY - credentials json for authentication
+# - TF_[STAGING|PRODUCTION]_CLIENT_REPOSITORY
+# - TF_[STAGING|PRODUCTION]_CLIENT_SERVICE
+# - TF_[STAGING|PRODUCTION]_CMS_REPOSITORY
+# - TF_[STAGING|PRODUCTION]_CMS_SERVICE
+# - TF_[STAGING|PRODUCTION]_ANALYSIS_CF_NAME
 #
-# it also uses the following secrets not managed by Terraform:
-# - <environment>_CLIENT_ENV
+# The workflow also processes GH secrets and variables managed by Terraform or manually, which are used to build the .env files for the containers.
+# These follow the naming convention:
+# - TF_(STAGING|PRODUCTION)_[CLIENTENV|CMSENV]_* - managed by Terraform
+# - (STAGING|PRODUCTION)_[CLIENTENV|CMSENV]_* - managed manually
 
 name: Run deploy
 
@@ -23,15 +23,14 @@ on:
       - develop
 
     paths:
-      - 'frontend/**'
+      - 'client/**'
       - 'cms/**'
-      - 'cloud_functions/**'
       - '.github/workflows/*'
 
 env:
-  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  GAR_LOCATION: ${{ secrets.GCP_REGION }}
-  REGION: ${{ secrets.GCP_REGION }}
+  PROJECT_ID: ${{ secrets.TF_GCP_PROJECT_ID }}
+  GAR_LOCATION: ${{ secrets.TF_GCP_REGION }}
+  REGION: ${{ secrets.TF_GCP_REGION }}
 
 jobs:
   deploy_client:
@@ -61,7 +60,7 @@ jobs:
         id: auth
         uses: 'google-github-actions/auth@v1'
         with:
-          credentials_json: "${{ secrets[format('{0}_GCP_SA_KEY', steps.extract_environment.outputs.environment)] }}"
+          credentials_json: "${{ secrets[format('TF_{0}_GCP_SA_KEY', steps.extract_environment.outputs.environment)] }}"
           token_format: 'access_token'
 
       # Authenticate Docker to Google Cloud Artifact Registry via credentials json
@@ -71,20 +70,20 @@ jobs:
         with:
           registry: ${{ env.GAR_LOCATION }}-docker.pkg.dev
           username: _json_key
-          password: ${{ secrets[format('{0}_GCP_SA_KEY', steps.extract_environment.outputs.environment)] }}
+          password: ${{ secrets[format('TF_{0}_GCP_SA_KEY', steps.extract_environment.outputs.environment)] }}
 
       - name: Copy env variables to docker
+        shell: bash
         run: |
-          echo "${{ secrets[format('{0}_CLIENT_ENV', steps.extract_environment.outputs.environment)] }}" > frontend/.env.local
-          # append Terraform managed secrets
-          echo "${{ secrets[format('{0}_CLIENT_ENV_TF_MANAGED', steps.extract_environment.outputs.environment)] }}" >> frontend/.env.local
+          # Filter client secrets & vars and save .env file (names starting with (TF_)(PRODUCTION|STAGING_)CLIENTENV_
+          echo '${{ secrets != null && toJSON(secrets) || null }}' '${{ vars != null && toJSON(vars) || null}}' | jq -r 'to_entries | map(.key + "=" + .value) | .[]' | grep -E "^(TF_)?(${{ steps.extract_environment.outputs.environment }}_)?CLIENTENV_" | sed -r 's/^(TF_)?(${{ steps.extract_environment.outputs.environment }}_)?CLIENTENV_//' > client/.env.local
 
       - name: Build and Push Container
         env:
-          REPOSITORY: ${{ secrets[format('{0}_CLIENT_REPOSITORY', steps.extract_environment.outputs.environment)] }} 
-          SERVICE: ${{ secrets[format('{0}_CLIENT_SERVICE', steps.extract_environment.outputs.environment)] }}
+          REPOSITORY: ${{ secrets[format('TF_{0}_CLIENT_REPOSITORY', steps.extract_environment.outputs.environment)] }} 
+          SERVICE: ${{ secrets[format('TF_{0}_CLIENT_SERVICE', steps.extract_environment.outputs.environment)] }}
         run: |- 
-          docker build -f frontend/Dockerfile.prod -t "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:${{ github.sha }}" ./frontend
+          docker build -f client/Dockerfile.prod -t "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:${{ github.sha }}" ./client
           docker push "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:${{ github.sha }}"
           # tag as "latest"
           docker tag "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:${{ github.sha }}" "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:latest"
@@ -92,8 +91,8 @@ jobs:
 
       - name: Deploy to Cloud Run
         env:
-          REPOSITORY: ${{ secrets[format('{0}_CLIENT_REPOSITORY', steps.extract_environment.outputs.environment)] }} 
-          SERVICE: ${{ secrets[format('{0}_CLIENT_SERVICE', steps.extract_environment.outputs.environment)] }}
+          REPOSITORY: ${{ secrets[format('TF_{0}_CLIENT_REPOSITORY', steps.extract_environment.outputs.environment)] }} 
+          SERVICE: ${{ secrets[format('TF_{0}_CLIENT_SERVICE', steps.extract_environment.outputs.environment)] }}
         id: deploy
         uses: google-github-actions/deploy-cloudrun@v1
         with:
@@ -135,7 +134,7 @@ jobs:
         id: auth
         uses: 'google-github-actions/auth@v1'
         with:
-          credentials_json: "${{ secrets[format('{0}_GCP_SA_KEY', steps.extract_environment.outputs.environment)] }}"
+          credentials_json: "${{ secrets[format('TF_{0}_GCP_SA_KEY', steps.extract_environment.outputs.environment)] }}"
           token_format: 'access_token'
 
       # Authenticate Docker to Google Cloud Artifact Registry via credentials json
@@ -145,16 +144,18 @@ jobs:
         with:
           registry: ${{ env.GAR_LOCATION }}-docker.pkg.dev
           username: _json_key
-          password: ${{ secrets[format('{0}_GCP_SA_KEY', steps.extract_environment.outputs.environment)] }}
+          password: ${{ secrets[format('TF_{0}_GCP_SA_KEY', steps.extract_environment.outputs.environment)] }}
 
       - name: Copy env variables to docker
+        shell: bash
         run: |
-          echo "${{ secrets[format('{0}_CMS_ENV_TF_MANAGED', steps.extract_environment.outputs.environment)] }}" > cms/.env
+          # Filter cms secrets & vars and save .env file (names starting with (TF_)(PRODUCTION|STAGING_)CMSENV_
+          echo '${{ secrets != null && toJSON(secrets) || null }}' '${{ vars != null && toJSON(vars) || null}}' | jq -r 'to_entries | map(.key + "=" + .value) | .[]' | grep -E "^(TF_)?(${{ steps.extract_environment.outputs.environment }}_)?CMSENV_" | sed -r 's/^(TF_)?(${{ steps.extract_environment.outputs.environment }}_)?CMSENV_//' > cms/.env
 
       - name: Build and Push Container
         env:
-          REPOSITORY: ${{ secrets[format('{0}_CMS_REPOSITORY', steps.extract_environment.outputs.environment)] }} 
-          SERVICE: ${{ secrets[format('{0}_CMS_SERVICE', steps.extract_environment.outputs.environment)] }}
+          REPOSITORY: ${{ secrets[format('TF_{0}_CMS_REPOSITORY', steps.extract_environment.outputs.environment)] }} 
+          SERVICE: ${{ secrets[format('TF_{0}_CMS_SERVICE', steps.extract_environment.outputs.environment)] }}
         run: |-
           docker build -f cms/Dockerfile.prod -t "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:${{ github.sha }}" ./cms
           docker push "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:${{ github.sha }}"
@@ -164,8 +165,8 @@ jobs:
 
       - name: Deploy to Cloud Run
         env:
-          REPOSITORY: ${{ secrets[format('{0}_CMS_REPOSITORY', steps.extract_environment.outputs.environment)] }} 
-          SERVICE: ${{ secrets[format('{0}_CMS_SERVICE', steps.extract_environment.outputs.environment)] }}
+          REPOSITORY: ${{ secrets[format('TF_{0}_CMS_REPOSITORY', steps.extract_environment.outputs.environment)] }} 
+          SERVICE: ${{ secrets[format('TF_{0}_CMS_SERVICE', steps.extract_environment.outputs.environment)] }}
         id: deploy
         uses: google-github-actions/deploy-cloudrun@v1
         with:
