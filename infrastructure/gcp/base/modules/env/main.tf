@@ -137,8 +137,60 @@ locals {
   frontend_lb_url    = "https://${local.domain}"
   cms_lb_url         = "https://${local.domain}/${var.backend_path_prefix}/"
   api_lb_url         = "https://${local.domain}/${var.backend_path_prefix}/api/"
+}
 
-  cms_env = {
+# Preparation of variable / secret maps for the github_values module
+locals {
+  # firstly, the variables / secrets which are used by the GH workflow itself  
+  action_variable_map_with_unprefixed_keys = {
+    "CMS_URL" = local.cms_lb_url
+  }
+  action_secret_map_with_unprefixed_keys = {
+    "GCP_SA_KEY" = base64decode(google_service_account_key.deploy_service_account_key.private_key)
+    "PROJECT_NAME" = var.project_name
+    "CMS_REPOSITORY" = module.backend_gcr.repository_name
+    "CLIENT_REPOSITORY" = module.frontend_gcr.repository_name
+    "CMS_SERVICE" = module.backend_cloudrun.name
+    "CLIENT_SERVICE" = module.frontend_cloudrun.name
+    "CMS_ENV_TF_MANAGED" = join("\n", [for key, value in local.cms_secret_map: "${key}=${value}"])
+    "CLIENT_ENV_TF_MANAGED" = join("\n", [for key, value in local.client_secret_map : "${key}=${value}"])  
+  }
+  # those need to have their names prefixed with the environment name, so as to be able to differentiate between staging and production
+  # could be achieved using GH environments as well, which would be a good alternative flow, but it is not available in all GH plans
+  action_variable_map = {
+    for key, value in local.action_variable_map_with_unprefixed_keys :
+      "${upper(var.environment)}_${key}" => value
+  }
+  action_secret_map = {
+    for key, value in local.action_secret_map_with_unprefixed_keys :
+      "${upper(var.environment)}_${key}" => value
+  }
+
+  # secondly, the variables / secrets which are used by the client / cms and need to be provided in the .env file when building the image
+  # those need to be also prefixed with the target name, so as to be able to differentiate between client and cms
+  # The names for those variables / secrets should follow the template:
+  # (STAGING|PRODUCTION-)[CLIENT|CMS]-VARIABLE_NAME
+  # - the first part of the name (environment) can be omitted if the variable / secret is the same for both environments
+  # - the middle part of the name (target) cannot be omitted, it is used to decide in which .env file the variable / secret should be placed
+  # Before placing them in the .env files, the environment and target prefixes are removed.
+  client_variable_map_with_unprefixed_keys = {}
+  client_secret_map_with_unprefixed_keys = {
+    NEXT_PUBLIC_URL         = local.frontend_lb_url
+    NEXT_PUBLIC_API_URL     = local.api_lb_url
+    NEXT_PUBLIC_ENVIRONMENT = "production"
+    LOG_LEVEL               = "info"
+  }
+  client_variable_map = {
+    for key, value in local.client_variable_map_with_unprefixed_keys :
+      "${upper(var.environment)}_CLIENT_${key}" => value
+  }
+  client_secret_map = {
+    for key, value in local.client_secret_map_with_unprefixed_keys :
+      "${upper(var.environment)}_CLIENT_${key}" => value
+  }
+
+  cms_variable_map_with_unprefixed_keys = {}
+  cms_secret_map_with_unprefixed_keys = {
     HOST = "0.0.0.0"
     PORT = 1337
     APP_KEYS = join(
@@ -161,40 +213,33 @@ locals {
     DATABASE_PASSWORD = module.database.database_password
     DATABASE_SSL      = false
   }
-  client_env = {
-    NEXT_PUBLIC_URL         = local.frontend_lb_url
-    NEXT_PUBLIC_API_URL     = local.api_lb_url
-    NEXT_PUBLIC_ENVIRONMENT = "production"
-    LOG_LEVEL               = "info"
+  cms_variable_map = {
+    for key, value in local.cms_variable_map_with_unprefixed_keys :
+      "${upper(var.environment)}_CMS_${key}" => value
   }
-}
-
-locals {
-  gcp_sa_key        = "${upper(var.environment)}_GCP_SA_KEY"
-  cms_env_file      = "${upper(var.environment)}_CMS_ENV_TF_MANAGED"
-  client_env_file   = "${upper(var.environment)}_CLIENT_ENV_TF_MANAGED"
-  project_name      = "${upper(var.environment)}_PROJECT_NAME"
-  cms_repository    = "${upper(var.environment)}_CMS_REPOSITORY"
-  client_repository = "${upper(var.environment)}_CLIENT_REPOSITORY"
-  cms_service       = "${upper(var.environment)}_CMS_SERVICE"
-  client_service    = "${upper(var.environment)}_CLIENT_SERVICE"
+  cms_secret_map = {
+    for key, value in local.cms_secret_map_with_unprefixed_keys :
+      "${upper(var.environment)}_CMS_${key}" => value
+  }
 }
 
 module "github_values" {
   source    = "../github_values"
   repo_name = var.github_project
-  secret_map = {
-    GCP_PROJECT_ID            = var.gcp_project_id
-    GCP_REGION                = var.gcp_region
-    (local.gcp_sa_key)        = base64decode(google_service_account_key.deploy_service_account_key.private_key)
-    (local.project_name)      = var.project_name
-    (local.cms_repository)    = module.backend_gcr.repository_name
-    (local.client_repository) = module.frontend_gcr.repository_name
-    (local.cms_service)       = module.backend_cloudrun.name
-    (local.client_service)    = module.frontend_cloudrun.name
-    (local.cms_env_file)      = join("\n", [for key, value in local.cms_env : "${key}=${value}"])
-    (local.client_env_file)   = join("\n", [for key, value in local.client_env : "${key}=${value}"])
-  }
+  variable_map = merge(
+    local.action_variable_map,
+    local.client_variable_map,
+    local.cms_variable_map
+  )
+  secret_map = merge(
+    {
+      GCP_PROJECT_ID            = var.gcp_project_id
+      GCP_REGION                = var.gcp_region
+    },
+    local.action_secret_map,
+    local.client_secret_map,
+    local.cms_secret_map
+  )
 }
 
 resource "google_service_account" "deploy_service_account" {
