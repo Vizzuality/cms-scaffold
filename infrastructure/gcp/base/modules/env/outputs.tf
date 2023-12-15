@@ -7,5 +7,5 @@ output "cms_url" {
 }
 
 output "api_url" {
-  value = local.cms_lb_url
+  value = local.api_lb_url
 }
