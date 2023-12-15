@@ -146,9 +146,7 @@ locals {
 # Preparation of variable / secret maps for the github_values module
 locals {
   # firstly, the variables / secrets which are used by the GH workflow itself  
-  action_variable_map_with_unprefixed_keys = {
-    "CMS_URL" = local.cms_lb_url
-  }
+  action_variable_map_with_unprefixed_keys = {}
   action_secret_map_with_unprefixed_keys = {
     "GCP_SA_KEY" = base64decode(google_service_account_key.deploy_service_account_key.private_key)
     "PROJECT_NAME" = var.project_name
