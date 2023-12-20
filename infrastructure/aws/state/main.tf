@@ -2,15 +2,21 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.14"
+      version = "~> 5.31"
     }
   }
 
-  required_version = "~> 1.5.6"
+  required_version = "~> 1.6.6"
 }
 
 provider "aws" {
   region = var.aws_region
+
+  default_tags {
+    tags = {
+      ManagedBy = "Terraform"
+    }
+  }
 }
 
 resource "aws_s3_bucket" "state" {
