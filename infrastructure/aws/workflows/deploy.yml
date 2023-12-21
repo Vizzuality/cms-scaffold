@@ -38,23 +38,31 @@ jobs:
           } >> $GITHUB_OUTPUT
         id: extract_branch
 
+      - name: Extract environment name
+        env:
+          ENVIRONMENT: ${{ steps.extract_branch.outputs.branch == 'main' && 'PRODUCTION' || 'STAGING' }}
+        run: echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
+        id: extract_environment
+
       - name: Copy env variables to docker
         if: ${{ github.event_name == 'workflow_dispatch' || steps.client-changes.outputs.client == 'true' }}
         run: |
-          echo "${{ steps.extract_branch.outputs.branch == 'main' && secrets.PRODUCTION_CLIENT_ENV_FILE || secrets[format('{0}_CLIENT_ENV_FILE', steps.extract_branch.outputs.branch_upper)] }}" > client/.env.local
+          # Filter client secrets & vars and save .env file (names starting with (TF_)(PRODUCTION|STAGING_)CLIENTENV_
+          echo '${{ secrets != null && toJSON(secrets) || null }}' '${{ vars != null && toJSON(vars) || null}}' | jq -r 'to_entries | map(.key + "=" + .value) | .[]' | grep -E "^(TF_)?(${{ steps.extract_environment.outputs.environment }}_)?CLIENTENV_" | sed -r 's/^(TF_)?(${{ steps.extract_environment.outputs.environment }}_)?CLIENTENV_//' > client/.env.local
+         
 
       - name: Configure AWS credentials
         if: ${{ github.event_name == 'workflow_dispatch' || steps.client-changes.outputs.client == 'true' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.PIPELINE_USER_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.PIPELINE_USER_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.TF_PIPELINE_USER_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.TF_PIPELINE_USER_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.TF_AWS_REGION }}
 
       - name: Login to Amazon ECR
         if: ${{ github.event_name == 'workflow_dispatch' || steps.client-changes.outputs.client == 'true' }}
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v2
         with:
           mask-password: 'true'
 
@@ -72,8 +80,8 @@ jobs:
           file: ./client/Dockerfile.prod
           push: true
           tags: |
-            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.CLIENT_REPOSITORY_NAME }}:${{ github.sha }}
-            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.CLIENT_REPOSITORY_NAME }}:${{ steps.extract_branch.outputs.branch == 'main' && 'production' || steps.extract_branch.outputs.branch }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.TF_CLIENT_REPOSITORY_NAME }}:${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.TF_CLIENT_REPOSITORY_NAME }}:${{ steps.extract_branch.outputs.branch == 'main' && 'production' || 'staging' }}
 
   build_cms_image:
     name: Build CMS image and push to Amazon ECR
@@ -101,23 +109,30 @@ jobs:
           } >> $GITHUB_OUTPUT
         id: extract_branch
 
+      - name: Extract environment name
+        env:
+          ENVIRONMENT: ${{ steps.extract_branch.outputs.branch == 'main' && 'PRODUCTION' || 'STAGING' }}
+        run: echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
+        id: extract_environment
+
       - name: Copy env variables to docker
         if: ${{ github.event_name == 'workflow_dispatch' || steps.cms-changes.outputs.cms == 'true' }}
         run: |
-          echo "${{ steps.extract_branch.outputs.branch == 'main' && secrets.PRODUCTION_CMS_ENV_FILE || secrets[format('{0}_CMS_ENV_FILE', steps.extract_branch.outputs.branch_upper)] }}" > cms/.env
+          # Filter client secrets & vars and save .env file (names starting with (TF_)(PRODUCTION|STAGING_)CLIENTENV_
+          echo '${{ secrets != null && toJSON(secrets) || null }}' '${{ vars != null && toJSON(vars) || null}}' | jq -r 'to_entries | map(.key + "=" + .value) | .[]' | grep -E "^(TF_)?(${{ steps.extract_environment.outputs.environment }}_)?CMSENV_" | sed -r 's/^(TF_)?(${{ steps.extract_environment.outputs.environment }}_)?CMSENV_//' > cms/.env
 
       - name: Configure AWS credentials
         if: ${{ github.event_name == 'workflow_dispatch' || steps.cms-changes.outputs.cms == 'true' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.PIPELINE_USER_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.PIPELINE_USER_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.TF_PIPELINE_USER_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.TF_PIPELINE_USER_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.TF_AWS_REGION }}
 
       - name: Login to Amazon ECR
         if: ${{ github.event_name == 'workflow_dispatch' || steps.cms-changes.outputs.cms == 'true' }}
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v2
         with:
           mask-password: 'true'
 
@@ -135,8 +150,8 @@ jobs:
           file: ./cms/Dockerfile.prod
           push: true
           tags: |
-            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.CMS_REPOSITORY_NAME }}:${{ github.sha }}
-            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.CMS_REPOSITORY_NAME }}:${{ steps.extract_branch.outputs.branch == 'main' && 'production' || steps.extract_branch.outputs.branch }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.TF_CMS_REPOSITORY_NAME }}:${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.TF_CMS_REPOSITORY_NAME }}:${{ steps.extract_branch.outputs.branch == 'main' && 'production' || 'staging' }}
 
   deploy:
     name: Deploy Client and CMS to Amazon EB
@@ -150,9 +165,9 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.PIPELINE_USER_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.PIPELINE_USER_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.TF_PIPELINE_USER_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.TF_PIPELINE_USER_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.TF_AWS_REGION }}
 
       - name: Extract branch name
         run: |
@@ -173,9 +188,9 @@ jobs:
         working-directory: infrastructure/source_bundle
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY_CLIENT: ${{ secrets.CLIENT_REPOSITORY_NAME }}
-          ECR_REPOSITORY_CMS: ${{ secrets.CMS_REPOSITORY_NAME }}
-          IMAGE_TAG: ${{ steps.extract_branch.outputs.branch == 'main' && 'production' || steps.extract_branch.outputs.branch }}
+          ECR_REPOSITORY_CLIENT: ${{ secrets.TF_CLIENT_REPOSITORY_NAME }}
+          ECR_REPOSITORY_CMS: ${{ secrets.TF_CMS_REPOSITORY_NAME }}
+          IMAGE_TAG: ${{ steps.extract_branch.outputs.branch == 'main' && 'production' || 'staging' }}
         run: |
           echo "version: '3.3'" > docker-compose.yml
           echo "services:" >> docker-compose.yml
@@ -209,10 +224,10 @@ jobs:
       - name: Deploy to Amazon EB
         uses: einaregilsson/beanstalk-deploy@v21
         with:
-          aws_access_key: ${{ secrets.PIPELINE_USER_ACCESS_KEY_ID }}
-          aws_secret_key: ${{ secrets.PIPELINE_USER_SECRET_ACCESS_KEY }}
-          application_name: project-${{ steps.extract_branch.outputs.branch == 'main' && 'production' || steps.extract_branch.outputs.branch }}
-          environment_name: project-${{ steps.extract_branch.outputs.branch == 'main' && 'production' || steps.extract_branch.outputs.branch }}-environment
-          region: ${{ vars.AWS_REGION }}
+          aws_access_key: ${{ secrets.TF_PIPELINE_USER_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.TF_PIPELINE_USER_SECRET_ACCESS_KEY }}
+          application_name: ${{ secrets.TF_PROJECT_NAME}}-${{ steps.extract_branch.outputs.branch == 'main' && 'production' || 'staging' }}
+          environment_name: ${{ secrets.TF_PROJECT_NAME}}-${{ steps.extract_branch.outputs.branch == 'main' && 'production' || 'staging' }}-environment
+          region: ${{ secrets.TF_AWS_REGION }}
           version_label: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           deployment_package: infrastructure/source_bundle/deploy.zip
