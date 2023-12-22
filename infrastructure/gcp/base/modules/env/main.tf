@@ -133,16 +133,6 @@ resource "random_password" "app_key" {
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
-locals {
-  frontend_lb_url    = "https://${local.domain}"
-  cms_lb_url         = "https://${local.domain}/${var.backend_path_prefix}/"
-  api_lb_url         = "https://${local.domain}/${var.backend_path_prefix}/api/"
-  # to test while DNS not set up
-  # frontend_lb_url    = module.frontend_cloudrun.cloudrun_service_url
-  # cms_lb_url         = "${module.backend_cloudrun.cloudrun_service_url}/"
-  # api_lb_url         = "${module.backend_cloudrun.cloudrun_service_url}/api/"
-}
-
 resource "google_service_account" "deploy_service_account" {
   account_id   = "${var.project_name}-deploy-sa"
   display_name = "${var.project_name} Deploy Service Account"

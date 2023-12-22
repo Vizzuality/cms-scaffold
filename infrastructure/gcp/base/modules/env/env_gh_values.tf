@@ -1,3 +1,13 @@
+locals {
+  frontend_lb_url    = "https://${local.domain}"
+  cms_lb_url         = "https://${local.domain}/${var.backend_path_prefix}/"
+  api_lb_url         = "https://${local.domain}/${var.backend_path_prefix}/api/"
+  # to test while DNS not set up
+  # frontend_lb_url    = module.frontend_cloudrun.cloudrun_service_url
+  # cms_lb_url         = "${module.backend_cloudrun.cloudrun_service_url}/"
+  # api_lb_url         = "${module.backend_cloudrun.cloudrun_service_url}/api/"
+}
+
 # Preparation of variable / secret maps for the github_values module
 locals {
   # firstly, the variables / secrets which are used by the GH workflow itself  
