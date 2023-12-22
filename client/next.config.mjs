@@ -9,6 +9,7 @@ const nextConfig = {
   env: {
     RECOIL_DUPLICATE_ATOM_KEY_CHECKING_ENABLED: 'false',
   },
+  staticPageGenerationTimeout: 300
 };
 
 export default nextConfig;
