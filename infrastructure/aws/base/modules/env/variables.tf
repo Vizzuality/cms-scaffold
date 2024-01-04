@@ -78,3 +78,8 @@ variable "elasticbeanstalk_iam_service_linked_role_name" {
   type        = string
   description = "The IAM service linked role to use for the environment"
 }
+
+variable "repo_name" {
+  type        = string
+  description = "Name of the Github repository where the code is hosted"
+}

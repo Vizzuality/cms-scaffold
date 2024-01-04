@@ -66,12 +66,6 @@ variable "rds_backup_retention_period" {
   description = "Time in days to keep db backups"
 }
 
-variable "ga_tracking_id" {
-  type        = string
-  default     = ""
-  description = "Google Analytics tracking id"
-}
-
 variable "cms_url" {
   type        = string
   default     = ""

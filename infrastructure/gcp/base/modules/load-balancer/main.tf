@@ -1,8 +1,16 @@
+resource "google_project_service" "compute_engine_api" {
+  service            = "compute.googleapis.com"
+  disable_on_destroy = false
+}
+
 // IP address
 resource "google_compute_global_address" "ip_address" {
   name         = "${var.name}-lb"
   ip_version   = "IPV4"
   address_type = "EXTERNAL"
+
+  # to enable Compute Engine API
+  depends_on = [ google_project_service.compute_engine_api ]
 }
 
 locals {
