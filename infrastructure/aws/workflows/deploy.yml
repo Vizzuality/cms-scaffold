@@ -1,10 +1,26 @@
-name: Run deploy
+# The workflow uses GH Secrets managed by Terraform:
+# - TF_GCP_PROJECT_ID
+# - TF_GCP_REGION
+# - TF_[STAGING|PRODUCTION]_GCP_SA_KEY - credentials json for authentication
+# - TF_[STAGING|PRODUCTION]_CLIENT_REPOSITORY
+# - TF_[STAGING|PRODUCTION]_CLIENT_SERVICE
+# - TF_[STAGING|PRODUCTION]_CMS_REPOSITORY
+# - TF_[STAGING|PRODUCTION]_CMS_SERVICE
+# - TF_[STAGING|PRODUCTION]_ANALYSIS_CF_NAME
+#
+# The workflow also processes GH secrets and variables managed by Terraform or manually, which are used to build the .env files for the containers.
+# These follow the naming convention:
+# - TF_(STAGING|PRODUCTION)_[CLIENTENV|CMSENV]_* - managed by Terraform
+# - (STAGING|PRODUCTION)_[CLIENTENV|CMSENV]_* - managed manually
+
+name: Run deploy to AWS
 
 on:
   workflow_dispatch:
   push:
     branches:
       - main
+
     paths:
       - 'client/**'
       - 'cms/**'
@@ -14,11 +30,14 @@ on:
 jobs:
   build_client_image:
     name: Build Client image and push to Amazon ECR
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    env:
+      APP_ENV_PREFIX: CLIENTENV
+      APP_ENV_PATH: client/.env.local
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - uses: dorny/paths-filter@v2
         id: client-changes
@@ -37,19 +56,69 @@ jobs:
             echo "branch_upper=${branch^^}"
           } >> $GITHUB_OUTPUT
         id: extract_branch
-
-      - name: Extract environment name
-        env:
-          ENVIRONMENT: ${{ steps.extract_branch.outputs.branch == 'main' && 'PRODUCTION' || 'STAGING' }}
-        run: echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
-        id: extract_environment
-
-      - name: Copy env variables to docker
+      
+      - name: Set environment name
         if: ${{ github.event_name == 'workflow_dispatch' || steps.client-changes.outputs.client == 'true' }}
         run: |
-          # Filter client secrets & vars and save .env file (names starting with (TF_)(PRODUCTION|STAGING_)CLIENTENV_
-          echo '${{ secrets != null && toJSON(secrets) || null }}' '${{ vars != null && toJSON(vars) || null}}' | jq -r 'to_entries | map(.key + "=" + .value) | .[]' | grep -E "^(TF_)?(${{ steps.extract_environment.outputs.environment }}_)?CLIENTENV_" | sed -r 's/^(TF_)?(${{ steps.extract_environment.outputs.environment }}_)?CLIENTENV_//' > client/.env.local
-         
+          {
+            echo "ENVIRONMENT=${{ steps.extract_branch.outputs.branch == 'main' && 'PRODUCTION' || steps.extract_branch.outputs.branch_upper }}"
+          } >> $GITHUB_ENV
+
+      - name: Output secrets and vars as JSON
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.client-changes.outputs.client == 'true' }}
+        # Use GH Actions toJSON function to convert secrets and vars to JSON; in case no values present, output null (otherwise jq will fail)
+        run: |
+          {
+            echo 'secrets<<EOF'
+            echo '${{ secrets != null && toJSON(secrets) || null }}'
+            echo 'EOF'
+            echo 'vars<<EOF'
+            echo '${{ vars != null && toJSON(vars) || null }}'
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+        id: env_json
+
+      - name: Output secrets and vars as key=value entries
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.client-changes.outputs.client == 'true' }}
+        # Use jq to convert JSON to key=value entries
+        # 1. to_entries converts JSON to array of key/value pairs
+        # 2. map(.key + "=" + .value) converts each key/value pair to key=value
+        # 3. .[] flattens array to key=value entries
+        run: |
+          {
+            echo 'entries_all<<EOF'
+            echo '${{ steps.env_json.outputs.secrets }}' '${{ steps.env_json.outputs.vars }}' | jq -r 'to_entries | map(.key + "=" + .value) | .[]'
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+        id: env_entries_all
+
+      - name: Filter secrets and vars for inclusion in .env file by environment and application prefixes
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.client-changes.outputs.client == 'true' }}
+        # Use grep to filter client secrets & vars and save .env file (names starting with (TF_)((PRODUCTION|STAGING|SOMEBRANCH)_)[CLIENTENV|CMSENV]_
+        run: |
+          {
+            echo 'entries_filtered<<EOF'
+            echo '${{ steps.env_entries_all.outputs.entries_all }}' | grep -E "^(TF_)?(${ENVIRONMENT}_)?${APP_ENV_PREFIX}_"
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+        id: env_entries_filtered
+
+      - name: Strip environment and application prefixes from secret and var names
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.client-changes.outputs.client == 'true' }}
+        # Use sed to strip environment and application prefixes from secret and var names
+        run: |
+          {
+            echo 'entries_stripped<<EOF'
+            echo '${{ steps.env_entries_filtered.outputs.entries_filtered }}' | sed -E "s/^(TF_)?("$ENVIRONMENT"_)?"$APP_ENV_PREFIX"_//"
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+        id: env_entries_stripped
+
+      - name: Save .env file
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.client-changes.outputs.client == 'true' }}
+        run: |
+          echo '${{ steps.env_entries_stripped.outputs.entries_stripped }}' >> $APP_ENV_PATH
+          cat $APP_ENV_PATH
 
       - name: Configure AWS credentials
         if: ${{ github.event_name == 'workflow_dispatch' || steps.client-changes.outputs.client == 'true' }}
@@ -81,15 +150,18 @@ jobs:
           push: true
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/${{ secrets.TF_CLIENT_REPOSITORY_NAME }}:${{ github.sha }}
-            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.TF_CLIENT_REPOSITORY_NAME }}:${{ steps.extract_branch.outputs.branch == 'main' && 'production' || 'staging' }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.TF_CLIENT_REPOSITORY_NAME }}:${{ steps.extract_branch.outputs.branch == 'main' && 'production' || steps.extract_branch.outputs.branch }}
 
   build_cms_image:
     name: Build CMS image and push to Amazon ECR
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    env:
+      APP_ENV_PREFIX: CMSENV
+      APP_ENV_PATH: cms/.env
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - uses: dorny/paths-filter@v2
         id: cms-changes
@@ -109,17 +181,67 @@ jobs:
           } >> $GITHUB_OUTPUT
         id: extract_branch
 
-      - name: Extract environment name
-        env:
-          ENVIRONMENT: ${{ steps.extract_branch.outputs.branch == 'main' && 'PRODUCTION' || 'STAGING' }}
-        run: echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
-        id: extract_environment
-
-      - name: Copy env variables to docker
+      - name: Set environment name
         if: ${{ github.event_name == 'workflow_dispatch' || steps.cms-changes.outputs.cms == 'true' }}
         run: |
-          # Filter client secrets & vars and save .env file (names starting with (TF_)(PRODUCTION|STAGING_)CLIENTENV_
-          echo '${{ secrets != null && toJSON(secrets) || null }}' '${{ vars != null && toJSON(vars) || null}}' | jq -r 'to_entries | map(.key + "=" + .value) | .[]' | grep -E "^(TF_)?(${{ steps.extract_environment.outputs.environment }}_)?CMSENV_" | sed -r 's/^(TF_)?(${{ steps.extract_environment.outputs.environment }}_)?CMSENV_//' > cms/.env
+          {
+            echo "ENVIRONMENT=${{ steps.extract_branch.outputs.branch == 'main' && 'PRODUCTION' || steps.extract_branch.outputs.branch_upper }}"
+          } >> $GITHUB_ENV
+
+      - name: Output secrets and vars as JSON
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.cms-changes.outputs.cms == 'true' }}
+        # Use GH Actions toJSON function to convert secrets and vars to JSON; in case no values present, output null (otherwise jq will fail)
+        run: |
+          {
+            echo 'secrets<<EOF'
+            echo '${{ secrets != null && toJSON(secrets) || null }}'
+            echo 'EOF'
+            echo 'vars<<EOF'
+            echo '${{ vars != null && toJSON(vars) || null }}'
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+        id: env_json
+
+      - name: Output secrets and vars as key=value entries
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.cms-changes.outputs.cms == 'true' }}
+        # Use jq to convert JSON to key=value entries
+        # 1. to_entries converts JSON to array of key/value pairs
+        # 2. map(.key + "=" + .value) converts each key/value pair to key=value
+        # 3. .[] flattens array to key=value entries
+        run: |
+          {
+            echo 'entries_all<<EOF'
+            echo '${{ steps.env_json.outputs.secrets }}' '${{ steps.env_json.outputs.vars }}' | jq -r 'to_entries | map(.key + "=" + .value) | .[]'
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+        id: env_entries_all
+
+      - name: Filter secrets and vars for inclusion in .env file by environment and application prefixes
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.cms-changes.outputs.cms == 'true' }}
+        # Use grep to filter client secrets & vars and save .env file (names starting with (TF_)((PRODUCTION|STAGING|SOMEBRANCH)_)[CLIENTENV|CMSENV]_
+        run: |
+          {
+            echo 'entries_filtered<<EOF'
+            echo '${{ steps.env_entries_all.outputs.entries_all }}' | grep -E "^(TF_)?(${ENVIRONMENT}_)?${APP_ENV_PREFIX}_"
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+        id: env_entries_filtered
+
+      - name: Strip environment and application prefixes from secret and var names
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.cms-changes.outputs.cms == 'true' }}
+        # Use sed to strip environment and application prefixes from secret and var names
+        run: |
+          {
+            echo 'entries_stripped<<EOF'
+            echo '${{ steps.env_entries_filtered.outputs.entries_filtered }}' | sed -E "s/^(TF_)?("$ENVIRONMENT"_)?"$APP_ENV_PREFIX"_//"
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+        id: env_entries_stripped
+
+      - name: Save .env file
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.cms-changes.outputs.cms == 'true' }}
+        run: |
+          echo '${{ steps.env_entries_stripped.outputs.entries_stripped }}' >> $APP_ENV_PATH
 
       - name: Configure AWS credentials
         if: ${{ github.event_name == 'workflow_dispatch' || steps.cms-changes.outputs.cms == 'true' }}
