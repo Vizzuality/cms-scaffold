@@ -1,17 +1,17 @@
 # The workflow uses GH Secrets managed by Terraform:
 # - TF_GCP_PROJECT_ID
 # - TF_GCP_REGION
-# - TF_[STAGING|PRODUCTION]_GCP_SA_KEY - credentials json for authentication
-# - TF_[STAGING|PRODUCTION]_CLIENT_REPOSITORY
-# - TF_[STAGING|PRODUCTION]_CLIENT_SERVICE
-# - TF_[STAGING|PRODUCTION]_CMS_REPOSITORY
-# - TF_[STAGING|PRODUCTION]_CMS_SERVICE
-# - TF_[STAGING|PRODUCTION]_ANALYSIS_CF_NAME
+# - TF_[PRODUCTION|<UPPER CASE BRANCH NAME>]_GCP_SA_KEY - credentials json for authentication
+# - TF_[PRODUCTION|<UPPER CASE BRANCH NAME>]_CLIENT_REPOSITORY
+# - TF_[PRODUCTION|<UPPER CASE BRANCH NAME>]_CLIENT_SERVICE
+# - TF_[PRODUCTION|<UPPER CASE BRANCH NAME>]_CMS_REPOSITORY
+# - TF_[PRODUCTION|<UPPER CASE BRANCH NAME>]_CMS_SERVICE
+# - TF_[PRODUCTION|<UPPER CASE BRANCH NAME>]_ANALYSIS_CF_NAME
 #
 # The workflow also processes GH secrets and variables managed by Terraform or manually, which are used to build the .env files for the containers.
 # These follow the naming convention:
-# - TF_(STAGING|PRODUCTION)_[CLIENTENV|CMSENV]_* - managed by Terraform
-# - (STAGING|PRODUCTION)_[CLIENTENV|CMSENV]_* - managed manually
+# - TF_(PRODUCTION|<UPPER CASE BRANCH NAME>)_[CLIENT_ENV|CMS_ENV]_* - managed by Terraform
+# - (PRODUCTION|<UPPER CASE BRANCH NAME>)_[CLIENT_ENV|CMS_ENV]_* - managed manually
 
 name: Run deploy to GCP
 
@@ -41,7 +41,7 @@ jobs:
 
     runs-on: ubuntu-latest
     env:
-      APP_ENV_PREFIX: CLIENTENV
+      APP_ENV_PREFIX: CLIENT_ENV
       APP_ENV_PATH: client/.env.local
 
     steps:
@@ -103,7 +103,7 @@ jobs:
 
       - name: Filter secrets and vars for inclusion in .env file by environment and application prefixes
         if: ${{ github.event_name == 'workflow_dispatch' || steps.client-changes.outputs.client == 'true' }}
-        # Use grep to filter client secrets & vars and save .env file (names starting with (TF_)((PRODUCTION|STAGING|SOMEBRANCH)_)[CLIENTENV|CMSENV]_
+        # Use grep to filter client secrets & vars and save .env file (names starting with (TF_)((PRODUCTION|STAGING|SOMEBRANCH)_)[CLIENT_ENV|CMS_ENV]_
         run: |
           {
             echo 'entries_filtered<<EOF'
@@ -151,7 +151,7 @@ jobs:
       - name: Build and Push Container
         if: ${{ github.event_name == 'workflow_dispatch' || steps.client-changes.outputs.client == 'true' }}
         env:
-          REPOSITORY: ${{ secrets[format('TF_{0}_CLIENT_REPOSITORY', steps.extract_environment.outputs.environment)] }} 
+          REPOSITORY: ${{ secrets[format('TF_{0}_CLIENT_REPOSITORY', steps.extract_environment.outputs.environment)] }}
           SERVICE: ${{ secrets[format('TF_{0}_CLIENT_SERVICE', steps.extract_environment.outputs.environment)] }}
         run: |- 
           docker build -f client/Dockerfile.prod -t "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:${{ github.sha }}" ./client
@@ -163,7 +163,7 @@ jobs:
       - name: Deploy to Cloud Run
         if: ${{ github.event_name == 'workflow_dispatch' || steps.client-changes.outputs.client == 'true' }}
         env:
-          REPOSITORY: ${{ secrets[format('TF_{0}_CLIENT_REPOSITORY', steps.extract_environment.outputs.environment)] }} 
+          REPOSITORY: ${{ secrets[format('TF_{0}_CLIENT_REPOSITORY', steps.extract_environment.outputs.environment)] }}
           SERVICE: ${{ secrets[format('TF_{0}_CLIENT_SERVICE', steps.extract_environment.outputs.environment)] }}
         id: deploy
         uses: google-github-actions/deploy-cloudrun@v1
@@ -188,7 +188,7 @@ jobs:
 
     runs-on: ubuntu-latest
     env:
-      APP_ENV_PREFIX: CMSENV
+      APP_ENV_PREFIX: CMS_ENV
       APP_ENV_PATH: cms/.env
 
     steps:
@@ -250,7 +250,7 @@ jobs:
 
       - name: Filter secrets and vars for inclusion in .env file by environment and application prefixes
         if: ${{ github.event_name == 'workflow_dispatch' || steps.cms-changes.outputs.cms == 'true' }}
-        # Use grep to filter client secrets & vars and save .env file (names starting with (TF_)((PRODUCTION|STAGING|SOMEBRANCH)_)[CLIENTENV|CMSENV]_
+        # Use grep to filter client secrets & vars and save .env file (names starting with (TF_)((PRODUCTION|STAGING|SOMEBRANCH)_)[CLIENT_ENV|CMS_ENV]_
         run: |
           {
             echo 'entries_filtered<<EOF'
@@ -297,7 +297,7 @@ jobs:
       - name: Build and Push Container
         if: ${{ github.event_name == 'workflow_dispatch' || steps.cms-changes.outputs.cms == 'true' }}
         env:
-          REPOSITORY: ${{ secrets[format('TF_{0}_CMS_REPOSITORY', steps.extract_environment.outputs.environment)] }} 
+          REPOSITORY: ${{ secrets[format('TF_{0}_CMS_REPOSITORY', steps.extract_environment.outputs.environment)] }}
           SERVICE: ${{ secrets[format('TF_{0}_CMS_SERVICE', steps.extract_environment.outputs.environment)] }}
         run: |-
           docker build -f cms/Dockerfile.prod -t "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:${{ github.sha }}" ./cms
@@ -309,7 +309,7 @@ jobs:
       - name: Deploy to Cloud Run
         if: ${{ github.event_name == 'workflow_dispatch' || steps.cms-changes.outputs.cms == 'true' }}
         env:
-          REPOSITORY: ${{ secrets[format('TF_{0}_CMS_REPOSITORY', steps.extract_environment.outputs.environment)] }} 
+          REPOSITORY: ${{ secrets[format('TF_{0}_CMS_REPOSITORY', steps.extract_environment.outputs.environment)] }}
           SERVICE: ${{ secrets[format('TF_{0}_CMS_SERVICE', steps.extract_environment.outputs.environment)] }}
         id: deploy
         uses: google-github-actions/deploy-cloudrun@v1
