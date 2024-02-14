@@ -48,7 +48,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - uses: dorny/paths-filter@v2
+      - uses: dorny/paths-filter@v3
         id: client-changes
         with:
           filters: |
@@ -195,7 +195,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - uses: dorny/paths-filter@v2
+      - uses: dorny/paths-filter@v3
         id: cms-changes
         with:
           filters: |
